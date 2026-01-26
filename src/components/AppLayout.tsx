@@ -88,25 +88,7 @@ export function AppLayout() {
             })}
           </nav>
 
-          {/* User section */}
-          <div className="border-t border-sidebar-border p-4">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                  JD
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-                <p className="text-xs text-muted-foreground truncate">john@example.com</p>
-              </div>
-              <Link to="/">
-                <Button variant="ghost" size="icon" className="shrink-0">
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </div>
+
         </div>
       </aside>
 
@@ -129,11 +111,22 @@ export function AppLayout() {
           </div>
           
           <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8 lg:hidden">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                JD
-              </AvatarFallback>
-            </Avatar>
+            <div className="flex items-center gap-2 text-right">
+              <div className="hidden sm:block">
+                <p className="text-sm font-medium text-foreground">John Doe</p>
+                <p className="text-xs text-muted-foreground">john@example.com</p>
+              </div>
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                  JD
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <Link to="/">
+              <Button variant="ghost" size="icon">
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </header>
 
