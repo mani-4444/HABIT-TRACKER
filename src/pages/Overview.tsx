@@ -7,12 +7,14 @@ import {
   useHabits,
   useTodayCompletions,
   useToggleCompletion,
+  useHabitStats,
 } from "@/hooks/useHabits";
 
 export default function Overview() {
   const { data: habits = [], isLoading: habitsLoading } = useHabits();
   const { data: completions = [], isLoading: completionsLoading } =
     useTodayCompletions();
+  const { data: stats } = useHabitStats();
   const toggleMutation = useToggleCompletion();
 
   const isLoading = habitsLoading || completionsLoading;
@@ -75,16 +77,24 @@ export default function Overview() {
 
         <StatCard
           label="Current Streak"
-          value="12 days"
-          sublabel="+2 from last week"
-          trend="up"
+          value={
+            stats?.streak
+              ? `${stats.streak} day${stats.streak !== 1 ? "s" : ""}`
+              : "0 days"
+          }
+          sublabel="All habits completed"
+          trend={stats?.streak && stats.streak > 0 ? "up" : "neutral"}
           icon={Flame}
         />
         <StatCard
           label="This Week"
-          value="85%"
+          value={`${stats?.weeklyPercentage ?? 0}%`}
           sublabel="Completion rate"
-          trend="up"
+          trend={
+            stats?.weeklyPercentage && stats.weeklyPercentage >= 70
+              ? "up"
+              : "neutral"
+          }
           icon={TrendingUp}
         />
         <StatCard
