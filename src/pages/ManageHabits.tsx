@@ -1,71 +1,98 @@
-import { useState } from "react"
-import { Plus, Pencil, Trash2, X, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import { Plus, Pencil, Trash2, X, Check, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  useHabits,
+  useAddHabit,
+  useUpdateHabit,
+  useDeleteHabit,
+} from "@/hooks/useHabits";
 
-interface Habit {
-  id: string
-  name: string
-  emoji: string
-}
-
-const emojiOptions = ["📚", "💪", "🧘", "💧", "📝", "🎯", "🌱", "⭐", "🏃", "🎨"]
-
-const initialHabits: Habit[] = [
-  { id: "1", name: "Morning meditation", emoji: "🧘" },
-  { id: "2", name: "Read for 30 minutes", emoji: "📚" },
-  { id: "3", name: "Exercise", emoji: "💪" },
-  { id: "4", name: "Drink 8 glasses of water", emoji: "💧" },
-  { id: "5", name: "Journal before bed", emoji: "📝" },
-]
+const emojiOptions = [
+  "📚",
+  "💪",
+  "🧘",
+  "💧",
+  "📝",
+  "🎯",
+  "🌱",
+  "⭐",
+  "🏃",
+  "🎨",
+];
 
 export default function ManageHabits() {
-  const [habits, setHabits] = useState<Habit[]>(initialHabits)
-  const [newHabit, setNewHabit] = useState("")
-  const [selectedEmoji, setSelectedEmoji] = useState("⭐")
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editValue, setEditValue] = useState("")
+  const { data: habits = [], isLoading, error } = useHabits();
+  const addHabitMutation = useAddHabit();
+  const updateHabitMutation = useUpdateHabit();
+  const deleteHabitMutation = useDeleteHabit();
+
+  const [newHabit, setNewHabit] = useState("");
+  const [selectedEmoji, setSelectedEmoji] = useState("⭐");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   const addHabit = () => {
-    if (!newHabit.trim()) return
-    
-    const habit: Habit = {
-      id: Date.now().toString(),
-      name: newHabit.trim(),
-      emoji: selectedEmoji,
-    }
-    
-    setHabits([...habits, habit])
-    setNewHabit("")
-    setSelectedEmoji("⭐")
-  }
+    if (!newHabit.trim()) return;
+
+    addHabitMutation.mutate(
+      { name: newHabit.trim(), emoji: selectedEmoji },
+      {
+        onSuccess: () => {
+          setNewHabit("");
+          setSelectedEmoji("⭐");
+        },
+      },
+    );
+  };
 
   const deleteHabit = (id: string) => {
-    setHabits(habits.filter((h) => h.id !== id))
-  }
+    deleteHabitMutation.mutate(id);
+  };
 
-  const startEdit = (habit: Habit) => {
-    setEditingId(habit.id)
-    setEditValue(habit.name)
-  }
+  const startEdit = (habit: { id: string; name: string }) => {
+    setEditingId(habit.id);
+    setEditValue(habit.name);
+  };
 
   const saveEdit = (id: string) => {
-    if (!editValue.trim()) return
-    
-    setHabits(
-      habits.map((h) =>
-        h.id === id ? { ...h, name: editValue.trim() } : h
-      )
-    )
-    setEditingId(null)
-    setEditValue("")
-  }
+    if (!editValue.trim()) return;
+
+    updateHabitMutation.mutate(
+      { id, name: editValue.trim() },
+      {
+        onSuccess: () => {
+          setEditingId(null);
+          setEditValue("");
+        },
+      },
+    );
+  };
 
   const cancelEdit = () => {
-    setEditingId(null)
-    setEditValue("")
+    setEditingId(null);
+    setEditValue("");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-destructive">
+          Failed to load habits. Please try again.
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -93,6 +120,7 @@ export default function ManageHabits() {
               onChange={(e) => setNewHabit(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addHabit()}
               className="h-11"
+              disabled={addHabitMutation.isPending}
             />
           </div>
 
@@ -116,9 +144,17 @@ export default function ManageHabits() {
             </div>
           </div>
 
-          <Button onClick={addHabit} disabled={!newHabit.trim()} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
-            Add Habit
+          <Button
+            onClick={addHabit}
+            disabled={!newHabit.trim() || addHabitMutation.isPending}
+            className="w-full sm:w-auto"
+          >
+            {addHabitMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            {addHabitMutation.isPending ? "Adding..." : "Add Habit"}
           </Button>
         </CardContent>
       </Card>
@@ -144,39 +180,48 @@ export default function ManageHabits() {
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <span className="text-xl">{habit.emoji}</span>
-                  
+
                   {editingId === habit.id ? (
                     <div className="flex flex-1 items-center gap-2">
                       <Input
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") saveEdit(habit.id)
-                          if (e.key === "Escape") cancelEdit()
+                          if (e.key === "Enter") saveEdit(habit.id);
+                          if (e.key === "Escape") cancelEdit();
                         }}
                         className="h-9"
                         autoFocus
+                        disabled={updateHabitMutation.isPending}
                       />
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => saveEdit(habit.id)}
                         className="h-9 w-9 shrink-0"
+                        disabled={updateHabitMutation.isPending}
                       >
-                        <Check className="h-4 w-4 text-success" />
+                        {updateHabitMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4 text-success" />
+                        )}
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={cancelEdit}
                         className="h-9 w-9 shrink-0"
+                        disabled={updateHabitMutation.isPending}
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ) : (
                     <>
-                      <span className="flex-1 text-sm font-medium">{habit.name}</span>
+                      <span className="flex-1 text-sm font-medium">
+                        {habit.name}
+                      </span>
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
@@ -191,6 +236,7 @@ export default function ManageHabits() {
                           size="icon"
                           onClick={() => deleteHabit(habit.id)}
                           className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive"
+                          disabled={deleteHabitMutation.isPending}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -204,5 +250,5 @@ export default function ManageHabits() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
