@@ -1,34 +1,52 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { Eye, EyeOff, ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Signup() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const navigate = useNavigate()
+  const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { signUp } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    
-    // Demo signup - just navigate to app
-    if (name && email && password) {
-      if (password.length < 6) {
-        setError("Password must be at least 6 characters")
-        return
-      }
-      navigate("/app")
-    } else {
-      setError("Please fill in all fields")
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!name || !email || !password) {
+      setError("Please fill in all fields");
+      return;
     }
-  }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await signUp(email, password, name);
+    setIsLoading(false);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      navigate("/app");
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center gradient-hero p-4">
@@ -44,7 +62,9 @@ export default function Signup() {
         <Card variant="elevated" className="animate-fade-in">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <span className="text-xl font-bold text-primary-foreground">H</span>
+              <span className="text-xl font-bold text-primary-foreground">
+                H
+              </span>
             </div>
             <CardTitle className="text-2xl">Create your account</CardTitle>
             <CardDescription>
@@ -76,7 +96,7 @@ export default function Signup() {
                   className="h-11"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -107,12 +127,14 @@ export default function Signup() {
                 </p>
               </div>
 
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
+              {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <Button type="submit" className="w-full h-11">
-                Create Account
+              <Button
+                type="submit"
+                className="w-full h-11"
+                disabled={isLoading}
+              >
+                {isLoading ? "Creating account..." : "Create Account"}
               </Button>
             </form>
 
@@ -129,5 +151,5 @@ export default function Signup() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
