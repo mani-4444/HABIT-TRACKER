@@ -1,7 +1,8 @@
-import { Calendar, Target, TrendingUp, Sparkles } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { StatCard } from "@/components/StatCard"
-import { ProgressRing } from "@/components/ProgressRing"
+import { Calendar, Target, TrendingUp, Sparkles, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatCard } from "@/components/StatCard";
+import { ProgressRing } from "@/components/ProgressRing";
+import { useAnalytics } from "@/hooks/useHabits";
 import {
   LineChart,
   Line,
@@ -12,37 +13,46 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-} from "recharts"
-
-const weeklyData = [
-  { day: "Mon", completed: 4, total: 5 },
-  { day: "Tue", completed: 5, total: 5 },
-  { day: "Wed", completed: 3, total: 5 },
-  { day: "Thu", completed: 5, total: 5 },
-  { day: "Fri", completed: 4, total: 5 },
-  { day: "Sat", completed: 5, total: 5 },
-  { day: "Sun", completed: 2, total: 5 },
-]
-
-const monthlyData = [
-  { week: "Week 1", rate: 72 },
-  { week: "Week 2", rate: 80 },
-  { week: "Week 3", rate: 85 },
-  { week: "Week 4", rate: 81 },
-]
-
-const habitStats = [
-  { name: "Morning meditation", emoji: "🧘", rate: 92, streak: 14 },
-  { name: "Read for 30 minutes", emoji: "📚", rate: 85, streak: 8 },
-  { name: "Exercise", emoji: "💪", rate: 78, streak: 5 },
-  { name: "Drink 8 glasses of water", emoji: "💧", rate: 95, streak: 21 },
-  { name: "Journal before bed", emoji: "📝", rate: 68, streak: 3 },
-]
+} from "recharts";
 
 export default function Analysis() {
-  const overallRate = Math.round(
-    habitStats.reduce((sum, h) => sum + h.rate, 0) / habitStats.length
-  )
+  const { data: analytics, isLoading, error } = useAnalytics();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-destructive">Failed to load analytics data.</p>
+      </div>
+    );
+  }
+
+  const {
+    weeklyData,
+    monthlyData,
+    habitStats,
+    totalDaysTracked,
+    totalCompletions,
+    bestStreak,
+    overallRate,
+  } = analytics || {
+    weeklyData: [],
+    monthlyData: [],
+    habitStats: [],
+    totalDaysTracked: 0,
+    totalCompletions: 0,
+    bestStreak: { days: 0, habitName: "-" },
+    overallRate: 0,
+  };
+
+  const hasData = habitStats.length > 0;
 
   return (
     <div className="space-y-8 pb-20 lg:pb-0">
@@ -69,22 +79,22 @@ export default function Analysis() {
 
         <StatCard
           label="Total Days Tracked"
-          value="45"
-          sublabel="Since you started"
+          value={String(totalDaysTracked)}
+          sublabel="Last 30 days"
           icon={Calendar}
         />
         <StatCard
           label="Habits Completed"
-          value="189"
-          sublabel="All time"
-          trend="up"
+          value={String(totalCompletions)}
+          sublabel="Last 30 days"
+          trend={totalCompletions > 0 ? "up" : undefined}
           icon={Target}
         />
         <StatCard
           label="Best Streak"
-          value="21 days"
-          sublabel="Drinking water"
-          trend="up"
+          value={`${bestStreak.days} days`}
+          sublabel={bestStreak.habitName}
+          trend={bestStreak.days > 0 ? "up" : undefined}
           icon={TrendingUp}
         />
       </div>
@@ -100,28 +110,37 @@ export default function Analysis() {
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={weeklyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="day" 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(var(--border))"
                   />
-                  <YAxis 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
+                  <XAxis
+                    dataKey="day"
+                    tick={{
+                      fill: "hsl(var(--muted-foreground))",
+                      fontSize: 12,
+                    }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                  />
+                  <YAxis
+                    tick={{
+                      fill: "hsl(var(--muted-foreground))",
+                      fontSize: 12,
+                    }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                     }}
-                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
                   />
-                  <Bar 
-                    dataKey="completed" 
-                    fill="hsl(var(--success))" 
+                  <Bar
+                    dataKey="completed"
+                    fill="hsl(var(--success))"
                     radius={[4, 4, 0, 0]}
                     name="Completed"
                   />
@@ -134,40 +153,54 @@ export default function Analysis() {
         {/* Monthly Trend */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Monthly Trend</CardTitle>
+            <CardTitle className="text-lg font-semibold">
+              Monthly Trend
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="week" 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(var(--border))"
                   />
-                  <YAxis 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                    axisLine={{ stroke: 'hsl(var(--border))' }}
+                  <XAxis
+                    dataKey="week"
+                    tick={{
+                      fill: "hsl(var(--muted-foreground))",
+                      fontSize: 12,
+                    }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                  />
+                  <YAxis
+                    tick={{
+                      fill: "hsl(var(--muted-foreground))",
+                      fontSize: 12,
+                    }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
                     domain={[0, 100]}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                     }}
-                    labelStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={(value: number) => [`${value}%`, 'Completion Rate']}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                    formatter={(value: number) => [
+                      `${value}%`,
+                      "Completion Rate",
+                    ]}
                   />
                   <Line
                     type="monotone"
                     dataKey="rate"
                     stroke="hsl(var(--primary))"
                     strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
-                    activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
+                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
+                    activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -179,37 +212,47 @@ export default function Analysis() {
       {/* Per-Habit Stats */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Habit Breakdown</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            Habit Breakdown
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {habitStats.map((habit, index) => (
-              <div
-                key={habit.name}
-                className="flex items-center gap-4 animate-slide-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <span className="text-xl">{habit.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{habit.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {habit.streak} day streak
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-success rounded-full transition-all duration-500"
-                      style={{ width: `${habit.rate}%` }}
-                    />
+          {!hasData ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                No habits yet. Add habits to see your breakdown.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {habitStats.map((habit, index) => (
+                <div
+                  key={habit.id}
+                  className="flex items-center gap-4 animate-slide-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <span className="text-xl">{habit.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{habit.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {habit.completions} completions (last 30 days)
+                    </p>
                   </div>
-                  <span className="text-sm font-medium w-12 text-right">
-                    {habit.rate}%
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-success rounded-full transition-all duration-500"
+                        style={{ width: `${habit.rate}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium w-12 text-right">
+                      {habit.rate}%
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -231,5 +274,5 @@ export default function Analysis() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

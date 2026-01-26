@@ -319,3 +319,232 @@ export function useHabitStats() {
     enabled: !!user,
   });
 }
+
+// ============================================
+// ANALYTICS DATA
+// ============================================
+
+export interface WeeklyDataPoint {
+  day: string;
+  completed: number;
+  total: number;
+}
+
+export interface MonthlyDataPoint {
+  week: string;
+  rate: number;
+}
+
+export interface HabitStatData {
+  id: string;
+  name: string;
+  emoji: string;
+  rate: number;
+  completions: number;
+}
+
+export interface AnalyticsData {
+  weeklyData: WeeklyDataPoint[];
+  monthlyData: MonthlyDataPoint[];
+  habitStats: HabitStatData[];
+  totalDaysTracked: number;
+  totalCompletions: number;
+  bestStreak: { days: number; habitName: string };
+  overallRate: number;
+}
+
+// Fetch comprehensive analytics data
+export function useAnalytics() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["analytics", user?.id],
+    queryFn: async (): Promise<AnalyticsData> => {
+      // Get user's active habits
+      const { data: habits, error: habitsError } = await supabase
+        .from("habits")
+        .select("id, name, emoji, created_at")
+        .eq("is_archived", false)
+        .order("created_at", { ascending: true });
+
+      if (habitsError) throw habitsError;
+
+      if (!habits || habits.length === 0) {
+        return {
+          weeklyData: [],
+          monthlyData: [],
+          habitStats: [],
+          totalDaysTracked: 0,
+          totalCompletions: 0,
+          bestStreak: { days: 0, habitName: "-" },
+          overallRate: 0,
+        };
+      }
+
+      const habitIds = habits.map((h) => h.id);
+      const habitCount = habits.length;
+
+      // Fetch all completions for the last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data: allCompletions, error: completionsError } = await supabase
+        .from("habit_completions")
+        .select("habit_id, completed_date")
+        .in("habit_id", habitIds)
+        .gte("completed_date", getDateString(thirtyDaysAgo))
+        .order("completed_date", { ascending: true });
+
+      if (completionsError) throw completionsError;
+
+      const completions = allCompletions || [];
+
+      // ---- WEEKLY DATA (Last 7 days) ----
+      const weeklyData: WeeklyDataPoint[] = [];
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = getDateString(date);
+        const dayName = dayNames[date.getDay()];
+
+        const dayCompletions = completions.filter(
+          (c) => c.completed_date === dateStr,
+        ).length;
+
+        weeklyData.push({
+          day: dayName,
+          completed: dayCompletions,
+          total: habitCount,
+        });
+      }
+
+      // ---- MONTHLY DATA (4 weeks) ----
+      const monthlyData: MonthlyDataPoint[] = [];
+
+      for (let week = 3; week >= 0; week--) {
+        const weekStart = new Date();
+        weekStart.setDate(weekStart.getDate() - (week * 7 + 6));
+        const weekEnd = new Date();
+        weekEnd.setDate(weekEnd.getDate() - week * 7);
+
+        let weekCompletions = 0;
+        let daysInWeek = 0;
+
+        for (let d = 0; d < 7; d++) {
+          const checkDate = new Date(weekStart);
+          checkDate.setDate(weekStart.getDate() + d);
+
+          // Don't count future days
+          if (checkDate > new Date()) break;
+
+          daysInWeek++;
+          const dateStr = getDateString(checkDate);
+          weekCompletions += completions.filter(
+            (c) => c.completed_date === dateStr,
+          ).length;
+        }
+
+        const maxPossible = habitCount * daysInWeek;
+        const rate =
+          maxPossible > 0
+            ? Math.round((weekCompletions / maxPossible) * 100)
+            : 0;
+
+        monthlyData.push({
+          week: `Week ${4 - week}`,
+          rate: Math.min(100, rate),
+        });
+      }
+
+      // ---- PER-HABIT STATS ----
+      const habitStats: HabitStatData[] = habits.map((habit) => {
+        const habitCompletions = completions.filter(
+          (c) => c.habit_id === habit.id,
+        ).length;
+
+        // Calculate rate based on days since habit was created (max 30)
+        const createdDate = new Date(habit.created_at);
+        const today = new Date();
+        const daysSinceCreated = Math.min(
+          30,
+          Math.ceil(
+            (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24),
+          ),
+        );
+
+        const rate =
+          daysSinceCreated > 0
+            ? Math.round((habitCompletions / daysSinceCreated) * 100)
+            : 0;
+
+        return {
+          id: habit.id,
+          name: habit.name,
+          emoji: habit.emoji,
+          rate: Math.min(100, rate),
+          completions: habitCompletions,
+        };
+      });
+
+      // ---- AGGREGATE STATS ----
+      const totalCompletions = completions.length;
+
+      // Count unique days with at least one completion
+      const uniqueDays = new Set(completions.map((c) => c.completed_date));
+      const totalDaysTracked = uniqueDays.size;
+
+      // Find best individual habit streak
+      let bestStreak = { days: 0, habitName: "-" };
+
+      for (const habit of habits) {
+        const habitCompletionDates = new Set(
+          completions
+            .filter((c) => c.habit_id === habit.id)
+            .map((c) => c.completed_date),
+        );
+
+        let currentStreak = 0;
+        let maxStreak = 0;
+
+        for (let i = 0; i < 30; i++) {
+          const checkDate = new Date();
+          checkDate.setDate(checkDate.getDate() - i);
+          const dateStr = getDateString(checkDate);
+
+          if (habitCompletionDates.has(dateStr)) {
+            currentStreak++;
+            maxStreak = Math.max(maxStreak, currentStreak);
+          } else {
+            currentStreak = 0;
+          }
+        }
+
+        if (maxStreak > bestStreak.days) {
+          bestStreak = { days: maxStreak, habitName: habit.name };
+        }
+      }
+
+      // Overall completion rate
+      const overallRate =
+        habitStats.length > 0
+          ? Math.round(
+              habitStats.reduce((sum, h) => sum + h.rate, 0) /
+                habitStats.length,
+            )
+          : 0;
+
+      return {
+        weeklyData,
+        monthlyData,
+        habitStats,
+        totalDaysTracked,
+        totalCompletions,
+        bestStreak,
+        overallRate,
+      };
+    },
+    enabled: !!user,
+  });
+}
