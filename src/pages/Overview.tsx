@@ -1,45 +1,47 @@
-import { useState } from "react"
-import { Calendar, Target, Flame, TrendingUp } from "lucide-react"
-import { HabitCheckbox } from "@/components/HabitCheckbox"
-import { ProgressRing } from "@/components/ProgressRing"
-import { StatCard } from "@/components/StatCard"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-interface Habit {
-  id: string
-  name: string
-  emoji?: string
-  completed: boolean
-}
-
-const initialHabits: Habit[] = [
-  { id: "1", name: "Morning meditation", emoji: "🧘", completed: false },
-  { id: "2", name: "Read for 30 minutes", emoji: "📚", completed: true },
-  { id: "3", name: "Exercise", emoji: "💪", completed: false },
-  { id: "4", name: "Drink 8 glasses of water", emoji: "💧", completed: true },
-  { id: "5", name: "Journal before bed", emoji: "📝", completed: false },
-]
+import { Calendar, Target, Flame, TrendingUp, Loader2 } from "lucide-react";
+import { HabitCheckbox } from "@/components/HabitCheckbox";
+import { ProgressRing } from "@/components/ProgressRing";
+import { StatCard } from "@/components/StatCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  useHabits,
+  useTodayCompletions,
+  useToggleCompletion,
+} from "@/hooks/useHabits";
 
 export default function Overview() {
-  const [habits, setHabits] = useState<Habit[]>(initialHabits)
+  const { data: habits = [], isLoading: habitsLoading } = useHabits();
+  const { data: completions = [], isLoading: completionsLoading } =
+    useTodayCompletions();
+  const toggleMutation = useToggleCompletion();
 
-  const completedCount = habits.filter((h) => h.completed).length
-  const totalCount = habits.length
-  const progressPercent = Math.round((completedCount / totalCount) * 100)
+  const isLoading = habitsLoading || completionsLoading;
 
-  const toggleHabit = (id: string) => {
-    setHabits((prev) =>
-      prev.map((habit) =>
-        habit.id === id ? { ...habit, completed: !habit.completed } : habit
-      )
-    )
-  }
+  // Create a Set of completed habit IDs for quick lookup
+  const completedHabitIds = new Set(completions.map((c) => c.habit_id));
+
+  // Merge habits with today's completion status
+  const habitsWithStatus = habits.map((habit) => ({
+    ...habit,
+    completedToday: completedHabitIds.has(habit.id),
+  }));
+
+  const completedCount = habitsWithStatus.filter(
+    (h) => h.completedToday,
+  ).length;
+  const totalCount = habitsWithStatus.length;
+  const progressPercent =
+    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  const toggleHabit = (habitId: string, isCurrentlyCompleted: boolean) => {
+    toggleMutation.mutate({ habitId, isCurrentlyCompleted });
+  };
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
-  })
+  });
 
   return (
     <div className="space-y-8 pb-20 lg:pb-0">
@@ -56,9 +58,15 @@ export default function Overview() {
         {/* Daily Progress */}
         <Card className="md:col-span-2 lg:col-span-1">
           <CardContent className="flex items-center justify-center py-6">
-            <ProgressRing progress={progressPercent} size={140} strokeWidth={10}>
+            <ProgressRing
+              progress={progressPercent}
+              size={140}
+              strokeWidth={10}
+            >
               <div className="text-center">
-                <p className="text-3xl font-bold">{completedCount}/{totalCount}</p>
+                <p className="text-3xl font-bold">
+                  {completedCount}/{totalCount}
+                </p>
                 <p className="text-xs text-muted-foreground">completed</p>
               </div>
             </ProgressRing>
@@ -91,7 +99,9 @@ export default function Overview() {
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">Today's Habits</CardTitle>
+            <CardTitle className="text-lg font-semibold">
+              Today's Habits
+            </CardTitle>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>{today}</span>
@@ -99,32 +109,50 @@ export default function Overview() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {habits.map((habit, index) => (
-            <div
-              key={habit.id}
-              className="animate-slide-in"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <HabitCheckbox
-                checked={habit.completed}
-                onCheckedChange={() => toggleHabit(habit.id)}
-                label={habit.name}
-                emoji={habit.emoji}
-              />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ))}
+          ) : habitsWithStatus.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              No habits yet. Go to Manage Habits to add some!
+            </p>
+          ) : (
+            habitsWithStatus.map((habit, index) => (
+              <div
+                key={habit.id}
+                className="animate-slide-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <HabitCheckbox
+                  checked={habit.completedToday}
+                  onCheckedChange={() =>
+                    toggleHabit(habit.id, habit.completedToday)
+                  }
+                  label={habit.name}
+                  emoji={habit.emoji}
+                  disabled={toggleMutation.isPending}
+                />
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
 
       {/* Encouragement */}
-      {progressPercent === 100 && (
-        <Card variant="feature" className="border-success/30 bg-success-muted animate-fade-in">
+      {progressPercent === 100 && totalCount > 0 && (
+        <Card
+          variant="feature"
+          className="border-success/30 bg-success-muted animate-fade-in"
+        >
           <CardContent className="flex items-center gap-4 py-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success text-2xl">
               🎉
             </div>
             <div>
-              <p className="font-semibold text-success">All habits completed!</p>
+              <p className="font-semibold text-success">
+                All habits completed!
+              </p>
               <p className="text-sm text-muted-foreground">
                 Amazing work! You're building real consistency.
               </p>
@@ -133,5 +161,5 @@ export default function Overview() {
         </Card>
       )}
     </div>
-  )
+  );
 }
