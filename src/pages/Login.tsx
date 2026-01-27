@@ -106,6 +106,15 @@ export default function Login() {
                 </div>
               </div>
 
+              <div className="flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
               {error && <p className="text-sm text-destructive">{error}</p>}
 
               <Button
