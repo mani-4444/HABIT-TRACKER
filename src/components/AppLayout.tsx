@@ -1,33 +1,46 @@
-import { useState } from "react"
-import { Link, useLocation, Outlet } from "react-router-dom"
-import { 
-  LayoutDashboard, 
-  ListChecks, 
-  BarChart3, 
-  LogOut, 
+import { useState } from "react";
+import { Link, useLocation, Outlet } from "react-router-dom";
+import {
+  LayoutDashboard,
+  ListChecks,
+  BarChart3,
+  LogOut,
   Menu,
   X,
-  ChevronLeft
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+  ChevronLeft,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { label: "Overview", href: "/app", icon: LayoutDashboard },
   { label: "Manage Habits", href: "/app/habits", icon: ListChecks },
   { label: "Analysis", href: "/app/analysis", icon: BarChart3 },
-]
+];
 
 export function AppLayout() {
-  const location = useLocation()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, signOut } = useAuth();
+
+  // Derive display name from email or user metadata
+  const email = user?.email || "";
+  const displayName =
+    user?.user_metadata?.full_name || email.split("@")[0] || "User";
+  const initials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
-  })
+  });
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -43,7 +56,7 @@ export function AppLayout() {
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-64 border-r border-sidebar-border bg-sidebar transition-transform duration-300 lg:static lg:translate-x-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex h-full flex-col">
@@ -51,9 +64,13 @@ export function AppLayout() {
           <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-6">
             <Link to="/app" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <span className="text-lg font-bold text-primary-foreground">H</span>
+                <span className="text-lg font-bold text-primary-foreground">
+                  H
+                </span>
               </div>
-              <span className="text-lg font-semibold text-foreground">HabitTracker</span>
+              <span className="text-lg font-semibold text-foreground">
+                HabitTracker
+              </span>
             </Link>
             <Button
               variant="ghost"
@@ -68,7 +85,7 @@ export function AppLayout() {
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.href
+              const isActive = location.pathname === item.href;
               return (
                 <Link
                   key={item.href}
@@ -78,17 +95,15 @@ export function AppLayout() {
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
                   )}
                 >
                   <item.icon className="h-5 w-5" />
                   {item.label}
                 </Link>
-              )
+              );
             })}
           </nav>
-
-
         </div>
       </aside>
 
@@ -109,24 +124,24 @@ export function AppLayout() {
               <p className="text-sm font-medium text-foreground">{today}</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-right">
               <div className="hidden sm:block">
-                <p className="text-sm font-medium text-foreground">John Doe</p>
-                <p className="text-xs text-muted-foreground">john@example.com</p>
+                <p className="text-sm font-medium text-foreground">
+                  {displayName}
+                </p>
+                <p className="text-xs text-muted-foreground">{email}</p>
               </div>
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                  JD
+                  {initials}
                 </AvatarFallback>
               </Avatar>
             </div>
-            <Link to="/">
-              <Button variant="ghost" size="icon">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </Link>
+            <Button variant="ghost" size="icon" onClick={() => signOut()}>
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </header>
 
@@ -140,7 +155,7 @@ export function AppLayout() {
       <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:hidden">
         <div className="flex items-center justify-around py-2">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.href
+            const isActive = location.pathname === item.href;
             return (
               <Link
                 key={item.href}
@@ -149,16 +164,18 @@ export function AppLayout() {
                   "flex flex-col items-center gap-1 px-4 py-2 text-xs font-medium transition-colors",
                   isActive
                     ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <item.icon className={cn("h-5 w-5", isActive && "text-primary")} />
+                <item.icon
+                  className={cn("h-5 w-5", isActive && "text-primary")}
+                />
                 <span>{item.label}</span>
               </Link>
-            )
+            );
           })}
         </div>
       </nav>
     </div>
-  )
+  );
 }
