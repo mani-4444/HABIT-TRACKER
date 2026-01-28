@@ -76,9 +76,9 @@ export default function Landing() {
           <div className="mt-16 flex items-start gap-3 text-left max-w-md mx-auto p-4 rounded-xl bg-card/50 border border-border/50">
             <Quote className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <blockquote className="text-sm text-muted-foreground italic">
-              "We are what we repeatedly do. Excellence, then, is not an act, but a habit."
+              "Track the habits. The results will follow."
               <footer className="mt-2 text-xs font-medium text-foreground not-italic">
-                — Aristotle
+                — Unknown
               </footer>
             </blockquote>
           </div>
@@ -117,7 +117,7 @@ export default function Landing() {
             <span className="text-sm font-medium">HabitTracker</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © 2024 HabitTracker. Built for consistency.
+            © 2026 HabitTracker. Built for consistency.
           </p>
         </div>
       </footer>
