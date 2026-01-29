@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,12 +20,14 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
   const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     if (!name || !email || !password) {
       setError("Please fill in all fields");
@@ -39,12 +41,16 @@ export default function Signup() {
 
     setIsLoading(true);
     const { error } = await signUp(email, password, name);
-    setIsLoading(false);
 
     if (error) {
+      setIsLoading(false);
       setError(error.message);
     } else {
-      navigate("/app");
+      setSuccessMessage("Account created successfully! Redirecting...");
+      // Brief delay to show success message before redirect
+      setTimeout(() => {
+        navigate("/app");
+      }, 500);
     }
   };
 
@@ -129,12 +135,25 @@ export default function Signup() {
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 
+              {successMessage && (
+                <p className="text-sm text-success font-medium">
+                  {successMessage}
+                </p>
+              )}
+
               <Button
                 type="submit"
                 className="w-full h-11"
                 disabled={isLoading}
               >
-                {isLoading ? "Creating account..." : "Create Account"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
               </Button>
             </form>
 
