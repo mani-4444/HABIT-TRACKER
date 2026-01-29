@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import { ArrowLeft, Mail, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -53,14 +53,20 @@ export default function ForgotPassword() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/10">
                   <CheckCircle className="h-6 w-6 text-success" />
                 </div>
-                <h2 className="text-xl font-semibold">Check your email</h2>
+                <h2 className="text-xl font-semibold">
+                  Password reset email sent
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  We've sent a password reset link to{" "}
+                  Please check your inbox and spam folder for{" "}
                   <span className="font-medium text-foreground">{email}</span>
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Didn't receive the email? Check your spam folder or try again.
-                </p>
+                <div className="rounded-lg bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Note:</strong> The email may take a few minutes to
+                    arrive. Be sure to check your spam or junk folder if you
+                    don't see it in your inbox.
+                  </p>
+                </div>
                 <div className="pt-4 space-y-2">
                   <Button
                     variant="outline"
@@ -125,7 +131,14 @@ export default function ForgotPassword() {
                 className="w-full h-11"
                 disabled={isLoading}
               >
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Reset Link"
+                )}
               </Button>
             </form>
 
