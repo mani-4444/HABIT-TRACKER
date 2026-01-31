@@ -1,7 +1,22 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "habittracker",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "An intelligent habit tracking web app with secure authentication and behavioral insights.",
+  "author": "Manideep",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mani-4444/HABIT-TRACKER.git"
+  },
+  "keywords": [
+    "habit-tracker",
+    "react",
+    "typescript",
+    "supabase",
+    "tailwindcss",
+    "vite"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",
