@@ -8,6 +8,7 @@ import {
   Menu,
   X,
   ChevronLeft,
+  CalendarCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { label: "Overview", href: "/app", icon: LayoutDashboard },
+  { label: "Today", href: "/app/today", icon: CalendarCheck },
   { label: "Manage Habits", href: "/app/habits", icon: ListChecks },
   { label: "Analysis", href: "/app/analysis", icon: BarChart3 },
 ];

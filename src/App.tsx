@@ -15,6 +15,7 @@ import { AppLayout } from "./components/AppLayout";
 import Overview from "./pages/Overview";
 import ManageHabits from "./pages/ManageHabits";
 import Analysis from "./pages/Analysis";
+import DailyTodos from "./pages/DailyTodos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route path="/app" element={<AppLayout />}>
                 <Route index element={<Overview />} />
+                <Route path="today" element={<DailyTodos />} />
                 <Route path="habits" element={<ManageHabits />} />
                 <Route path="analysis" element={<Analysis />} />
               </Route>
