@@ -13,7 +13,7 @@
 
 ## 🔗 Live Demo
 
-> 🚀 **[View Live Demo](https://your-deployed-url.vercel.app)** _(Update with your deployment URL)_
+> 🚀 ([](https://habit-tracker-indol-two.vercel.app/))
 
 ---
 
