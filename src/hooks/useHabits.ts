@@ -1,6 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMemo } from "react";
+import {
+  format,
+  subDays,
+  parseISO,
+  differenceInDays,
+  isEqual,
+  addDays,
+} from "date-fns";
 
 export interface Habit {
   id: string;
@@ -191,8 +200,203 @@ export function useToggleCompletion() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["completions"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
+      queryClient.invalidateQueries({ queryKey: ["streakStats"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
     },
   });
+}
+
+// ============================================
+// STREAK STATISTICS (Per-Habit)
+// ============================================
+
+export interface StreakStats {
+  currentStreak: number;
+  bestStreak: number;
+  isAtRisk: boolean; // true if streak is from yesterday (not completed today)
+  completedToday: boolean;
+}
+
+export interface HabitStreakMap {
+  [habitId: string]: StreakStats;
+}
+
+export interface OverallStreakStats {
+  bestStreak: { days: number; habitName: string; habitId: string };
+  currentStreak: { days: number; habitName: string; habitId: string };
+}
+
+/**
+ * Calculate streak stats for all habits.
+ *
+ * Streak Algorithm:
+ * - currentStreak: Count consecutive completed days ending TODAY.
+ *   If habit is NOT completed today, currentStreak = 0.
+ * - bestStreak: Maximum consecutive days ever achieved.
+ *
+ * Uses date-fns for safe date handling to avoid timezone issues.
+ */
+export function useHabitStreakStats() {
+  const { user } = useAuth();
+
+  const query = useQuery({
+    queryKey: ["streakStats", user?.id],
+    queryFn: async () => {
+      // Get user's active habits
+      const { data: habits, error: habitsError } = await supabase
+        .from("habits")
+        .select("id, name")
+        .eq("is_archived", false);
+
+      if (habitsError) throw habitsError;
+      if (!habits || habits.length === 0) {
+        return { streakMap: {} as HabitStreakMap, habits: [] };
+      }
+
+      const habitIds = habits.map((h) => h.id);
+
+      // Fetch completions for last 365 days (sufficient for streak calculation)
+      const oneYearAgo = format(subDays(new Date(), 365), "yyyy-MM-dd");
+
+      const { data: completions, error: completionsError } = await supabase
+        .from("habit_completions")
+        .select("habit_id, completed_date")
+        .in("habit_id", habitIds)
+        .gte("completed_date", oneYearAgo)
+        .order("completed_date", { ascending: false });
+
+      if (completionsError) throw completionsError;
+
+      return { completions: completions || [], habits };
+    },
+    enabled: !!user,
+  });
+
+  // Memoize streak calculations to avoid recomputing on every render
+  const streakData = useMemo(() => {
+    if (!query.data) {
+      return {
+        streakMap: {} as HabitStreakMap,
+        overall: {
+          bestStreak: { days: 0, habitName: "-", habitId: "" },
+          currentStreak: { days: 0, habitName: "-", habitId: "" },
+        } as OverallStreakStats,
+      };
+    }
+
+    const { completions, habits } = query.data;
+    if (!completions || !habits) {
+      return {
+        streakMap: {} as HabitStreakMap,
+        overall: {
+          bestStreak: { days: 0, habitName: "-", habitId: "" },
+          currentStreak: { days: 0, habitName: "-", habitId: "" },
+        } as OverallStreakStats,
+      };
+    }
+
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const yesterdayStr = format(subDays(new Date(), 1), "yyyy-MM-dd");
+    const streakMap: HabitStreakMap = {};
+
+    let overallBest = { days: 0, habitName: "-", habitId: "" };
+    let overallCurrent = { days: 0, habitName: "-", habitId: "" };
+
+    for (const habit of habits) {
+      // Get this habit's completion dates as a Set for O(1) lookup
+      const habitCompletionDates = new Set(
+        completions
+          .filter((c) => c.habit_id === habit.id)
+          .map((c) => c.completed_date),
+      );
+
+      const completedToday = habitCompletionDates.has(todayStr);
+      const completedYesterday = habitCompletionDates.has(yesterdayStr);
+
+      // Calculate current streak with new algorithm:
+      // - If completed today: compute streak ending today
+      // - Else if completed yesterday: compute streak ending yesterday (at risk)
+      // - Else: streak = 0
+      let currentStreak = 0;
+      let isAtRisk = false;
+
+      if (completedToday) {
+        // Streak is active, count from today backwards
+        currentStreak = 1;
+        let checkDate = subDays(new Date(), 1);
+
+        while (habitCompletionDates.has(format(checkDate, "yyyy-MM-dd"))) {
+          currentStreak++;
+          checkDate = subDays(checkDate, 1);
+        }
+      } else if (completedYesterday) {
+        // Streak is at risk, count from yesterday backwards
+        isAtRisk = true;
+        currentStreak = 1;
+        let checkDate = subDays(new Date(), 2); // Start from day before yesterday
+
+        while (habitCompletionDates.has(format(checkDate, "yyyy-MM-dd"))) {
+          currentStreak++;
+          checkDate = subDays(checkDate, 1);
+        }
+      }
+      // else: currentStreak remains 0
+
+      // Calculate best streak by iterating through sorted dates
+      const sortedDates = Array.from(habitCompletionDates).sort();
+      let bestStreak = sortedDates.length > 0 ? 1 : 0;
+      let tempStreak = 1;
+
+      for (let i = 1; i < sortedDates.length; i++) {
+        const prevDate = parseISO(sortedDates[i - 1]);
+        const currDate = parseISO(sortedDates[i]);
+        const diff = differenceInDays(currDate, prevDate);
+
+        if (diff === 1) {
+          tempStreak++;
+          bestStreak = Math.max(bestStreak, tempStreak);
+        } else if (diff > 1) {
+          tempStreak = 1;
+        }
+        // diff === 0 means duplicate date, ignore
+      }
+
+      streakMap[habit.id] = {
+        currentStreak,
+        bestStreak,
+        isAtRisk,
+        completedToday,
+      };
+
+      // Update overall stats
+      if (bestStreak > overallBest.days) {
+        overallBest = {
+          days: bestStreak,
+          habitName: habit.name,
+          habitId: habit.id,
+        };
+      }
+      if (currentStreak > overallCurrent.days) {
+        overallCurrent = {
+          days: currentStreak,
+          habitName: habit.name,
+          habitId: habit.id,
+        };
+      }
+    }
+
+    return {
+      streakMap,
+      overall: { bestStreak: overallBest, currentStreak: overallCurrent },
+    };
+  }, [query.data]);
+
+  return {
+    streakMap: streakData.streakMap,
+    overall: streakData.overall,
+    isLoading: query.isLoading,
+    error: query.error,
+  };
 }
 
 // ============================================

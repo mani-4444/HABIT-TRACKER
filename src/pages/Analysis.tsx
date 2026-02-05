@@ -1,8 +1,15 @@
-import { Calendar, Target, TrendingUp, Sparkles, Loader2 } from "lucide-react";
+import {
+  Calendar,
+  Target,
+  TrendingUp,
+  Sparkles,
+  Loader2,
+  Flame,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/StatCard";
 import { ProgressRing } from "@/components/ProgressRing";
-import { useAnalytics } from "@/hooks/useHabits";
+import { useAnalytics, useHabitStreakStats } from "@/hooks/useHabits";
 import {
   LineChart,
   Line,
@@ -17,8 +24,13 @@ import {
 
 export default function Analysis() {
   const { data: analytics, isLoading, error } = useAnalytics();
+  const {
+    overall: streakStats,
+    streakMap,
+    isLoading: streakLoading,
+  } = useHabitStreakStats();
 
-  if (isLoading) {
+  if (isLoading || streakLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -40,7 +52,6 @@ export default function Analysis() {
     habitStats,
     totalDaysTracked,
     totalCompletions,
-    bestStreak,
     overallRate,
   } = analytics || {
     weeklyData: [],
@@ -48,8 +59,14 @@ export default function Analysis() {
     habitStats: [],
     totalDaysTracked: 0,
     totalCompletions: 0,
-    bestStreak: { days: 0, habitName: "-" },
     overallRate: 0,
+  };
+
+  // Use real streak stats from the dedicated hook
+  const bestStreak = streakStats?.bestStreak || { days: 0, habitName: "-" };
+  const currentStreak = streakStats?.currentStreak || {
+    days: 0,
+    habitName: "-",
   };
 
   const hasData = habitStats.length > 0;
@@ -78,24 +95,31 @@ export default function Analysis() {
         </Card>
 
         <StatCard
-          label="Total Days Tracked"
-          value={String(totalDaysTracked)}
-          sublabel="Last 30 days"
-          icon={Calendar}
+          label="Current Streak"
+          value={`${currentStreak.days} day${currentStreak.days !== 1 ? "s" : ""}`}
+          sublabel={
+            currentStreak.days > 0
+              ? currentStreak.habitName
+              : "No active streak"
+          }
+          trend={currentStreak.days > 0 ? "up" : "neutral"}
+          icon={Flame}
         />
         <StatCard
-          label="Habits Completed"
+          label="Best Streak"
+          value={`${bestStreak.days} day${bestStreak.days !== 1 ? "s" : ""}`}
+          sublabel={
+            bestStreak.days > 0 ? bestStreak.habitName : "No streak yet"
+          }
+          trend={bestStreak.days > 0 ? "up" : undefined}
+          icon={TrendingUp}
+        />
+        <StatCard
+          label="Total Completions"
           value={String(totalCompletions)}
           sublabel="Last 30 days"
           trend={totalCompletions > 0 ? "up" : undefined}
           icon={Target}
-        />
-        <StatCard
-          label="Best Streak"
-          value={`${bestStreak.days} days`}
-          sublabel={bestStreak.habitName}
-          trend={bestStreak.days > 0 ? "up" : undefined}
-          icon={TrendingUp}
         />
       </div>
 
@@ -212,9 +236,22 @@ export default function Analysis() {
       {/* Per-Habit Stats */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">
-            Habit Breakdown
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold">
+              Habit Breakdown
+            </CardTitle>
+            {/* Legend for streak icons */}
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Flame className="h-3 w-3 text-orange-500" />
+                <span>Current</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <TrendingUp className="h-3 w-3 text-blue-500" />
+                <span>Best</span>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {!hasData ? (
@@ -225,32 +262,62 @@ export default function Analysis() {
             </div>
           ) : (
             <div className="space-y-4">
-              {habitStats.map((habit, index) => (
-                <div
-                  key={habit.id}
-                  className="flex items-center gap-4 animate-slide-in"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <span className="text-xl">{habit.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{habit.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {habit.completions} completions (last 30 days)
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-success rounded-full transition-all duration-500"
-                        style={{ width: `${habit.rate}%` }}
-                      />
+              {habitStats.map((habit, index) => {
+                const habitStreak = streakMap[habit.id];
+                return (
+                  <div
+                    key={habit.id}
+                    className="flex items-center gap-4 animate-slide-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <span className="text-xl">{habit.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {habit.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {habit.completions} completions (last 30 days)
+                      </p>
                     </div>
-                    <span className="text-sm font-medium w-12 text-right">
-                      {habit.rate}%
-                    </span>
+                    {/* Streak indicators */}
+                    <div className="flex items-center gap-3">
+                      {habitStreak && (
+                        <>
+                          <div
+                            className="flex items-center gap-1 text-orange-500"
+                            title="Current Streak"
+                          >
+                            <Flame className="h-4 w-4" />
+                            <span className="text-sm font-semibold w-6">
+                              {habitStreak.currentStreak}
+                            </span>
+                          </div>
+                          <div
+                            className="flex items-center gap-1 text-blue-500"
+                            title="Best Streak"
+                          >
+                            <TrendingUp className="h-4 w-4" />
+                            <span className="text-sm font-semibold w-6">
+                              {habitStreak.bestStreak}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-success rounded-full transition-all duration-500"
+                          style={{ width: `${habit.rate}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium w-12 text-right">
+                        {habit.rate}%
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
