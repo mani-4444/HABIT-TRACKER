@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Calendar, Target, Flame, TrendingUp, Loader2 } from "lucide-react";
 import { HabitCheckbox } from "@/components/HabitCheckbox";
 import { ProgressRing } from "@/components/ProgressRing";
@@ -8,14 +9,33 @@ import {
   useTodayCompletions,
   useToggleCompletion,
   useHabitStats,
+  useHabitStreakStats,
 } from "@/hooks/useHabits";
+
+// Helper to check if we're in the last 5 hours of the day
+function isUrgencyTime(): boolean {
+  const now = new Date();
+  const hoursRemaining = 23 - now.getHours() + (60 - now.getMinutes()) / 60;
+  return hoursRemaining <= 5;
+}
 
 export default function Overview() {
   const { data: habits = [], isLoading: habitsLoading } = useHabits();
   const { data: completions = [], isLoading: completionsLoading } =
     useTodayCompletions();
   const { data: stats } = useHabitStats();
+  const { streakMap } = useHabitStreakStats();
   const toggleMutation = useToggleCompletion();
+
+  // Track whether we're in the urgency window (last 5 hours of the day)
+  const [showUrgency, setShowUrgency] = useState(isUrgencyTime);
+
+  // Update urgency state every minute
+  useEffect(() => {
+    const checkUrgency = () => setShowUrgency(isUrgencyTime());
+    const interval = setInterval(checkUrgency, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
 
   const isLoading = habitsLoading || completionsLoading;
 
@@ -142,6 +162,9 @@ export default function Overview() {
                   label={habit.name}
                   emoji={habit.emoji}
                   disabled={toggleMutation.isPending}
+                  streak={streakMap[habit.id]?.currentStreak}
+                  isAtRisk={streakMap[habit.id]?.isAtRisk}
+                  showUrgency={showUrgency}
                 />
               </div>
             ))
