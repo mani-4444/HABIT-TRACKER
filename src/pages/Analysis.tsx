@@ -48,14 +48,16 @@ export default function Analysis() {
 
   const {
     weeklyData,
-    monthlyData,
+    last4WeeksTrend,
+    monthlyTrend,
     habitStats,
     totalDaysTracked,
     totalCompletions,
     overallRate,
   } = analytics || {
     weeklyData: [],
-    monthlyData: [],
+    last4WeeksTrend: [],
+    monthlyTrend: [],
     habitStats: [],
     totalDaysTracked: 0,
     totalCompletions: 0,
@@ -174,17 +176,20 @@ export default function Analysis() {
           </CardContent>
         </Card>
 
-        {/* Monthly Trend */}
+        {/* Last 4 Weeks Trend */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-semibold">
-              Monthly Trend
+              Last 4 Weeks Trend
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
+            <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyData}>
+                <LineChart
+                  data={last4WeeksTrend}
+                  margin={{ top: 10, right: 40, left: 10, bottom: 40 }}
+                >
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="hsl(var(--border))"
@@ -193,9 +198,14 @@ export default function Analysis() {
                     dataKey="week"
                     tick={{
                       fill: "hsl(var(--muted-foreground))",
-                      fontSize: 12,
+                      fontSize: 11,
                     }}
                     axisLine={{ stroke: "hsl(var(--border))" }}
+                    interval={0}
+                    angle={0}
+                    textAnchor="middle"
+                    tickMargin={10}
+                    padding={{ left: 20, right: 20 }}
                   />
                   <YAxis
                     tick={{
@@ -232,6 +242,61 @@ export default function Analysis() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Monthly Trend Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Monthly Trend</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyTrend}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                />
+                <XAxis
+                  dataKey="month"
+                  tick={{
+                    fill: "hsl(var(--muted-foreground))",
+                    fontSize: 12,
+                  }}
+                  axisLine={{ stroke: "hsl(var(--border))" }}
+                />
+                <YAxis
+                  tick={{
+                    fill: "hsl(var(--muted-foreground))",
+                    fontSize: 12,
+                  }}
+                  axisLine={{ stroke: "hsl(var(--border))" }}
+                  domain={[0, 100]}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  }}
+                  labelStyle={{ color: "hsl(var(--foreground))" }}
+                  formatter={(value: number, name: string) => {
+                    if (name === "rate")
+                      return [`${value}%`, "Completion Rate"];
+                    return [value, name];
+                  }}
+                />
+                <Bar
+                  dataKey="rate"
+                  fill="hsl(var(--primary))"
+                  radius={[4, 4, 0, 0]}
+                  name="rate"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Per-Habit Stats */}
       <Card>
