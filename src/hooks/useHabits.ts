@@ -7,8 +7,10 @@ import {
   subDays,
   parseISO,
   differenceInDays,
-  isEqual,
   addDays,
+  startOfMonth,
+  endOfMonth,
+  subMonths,
 } from "date-fns";
 
 export interface Habit {
@@ -534,9 +536,17 @@ export interface WeeklyDataPoint {
   total: number;
 }
 
-export interface MonthlyDataPoint {
+export interface Last4WeeksDataPoint {
   week: string;
   rate: number;
+}
+
+export interface MonthlyTrendDataPoint {
+  month: string; // "Jan", "Feb", etc.
+  monthKey: string; // "2024-01" for sorting
+  rate: number;
+  completions: number;
+  possible: number;
 }
 
 export interface HabitStatData {
@@ -549,7 +559,8 @@ export interface HabitStatData {
 
 export interface AnalyticsData {
   weeklyData: WeeklyDataPoint[];
-  monthlyData: MonthlyDataPoint[];
+  last4WeeksTrend: Last4WeeksDataPoint[];
+  monthlyTrend: MonthlyTrendDataPoint[];
   habitStats: HabitStatData[];
   totalDaysTracked: number;
   totalCompletions: number;
@@ -576,7 +587,8 @@ export function useAnalytics() {
       if (!habits || habits.length === 0) {
         return {
           weeklyData: [],
-          monthlyData: [],
+          last4WeeksTrend: [],
+          monthlyTrend: [],
           habitStats: [],
           totalDaysTracked: 0,
           totalCompletions: 0,
@@ -588,20 +600,30 @@ export function useAnalytics() {
       const habitIds = habits.map((h) => h.id);
       const habitCount = habits.length;
 
-      // Fetch all completions for the last 30 days
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // Fetch all completions for the last 12 months (for monthly trend)
+      const today = new Date();
+      const twelveMonthsAgo = format(
+        subMonths(startOfMonth(today), 11),
+        "yyyy-MM-dd",
+      );
 
       const { data: allCompletions, error: completionsError } = await supabase
         .from("habit_completions")
         .select("habit_id, completed_date")
         .in("habit_id", habitIds)
-        .gte("completed_date", getDateString(thirtyDaysAgo))
+        .gte("completed_date", twelveMonthsAgo)
         .order("completed_date", { ascending: true });
 
       if (completionsError) throw completionsError;
 
       const completions = allCompletions || [];
+
+      // Filter completions for last 30 days (for weekly data and per-habit stats)
+      const thirtyDaysAgoDate = subDays(today, 30);
+      const thirtyDaysAgoStr = format(thirtyDaysAgoDate, "yyyy-MM-dd");
+      const recentCompletions = completions.filter(
+        (c) => c.completed_date >= thirtyDaysAgoStr,
+      );
 
       // ---- WEEKLY DATA (Last 7 days) ----
       const weeklyData: WeeklyDataPoint[] = [];
@@ -613,7 +635,7 @@ export function useAnalytics() {
         const dateStr = getDateString(date);
         const dayName = dayNames[date.getDay()];
 
-        const dayCompletions = completions.filter(
+        const dayCompletions = recentCompletions.filter(
           (c) => c.completed_date === dateStr,
         ).length;
 
@@ -624,8 +646,8 @@ export function useAnalytics() {
         });
       }
 
-      // ---- MONTHLY DATA (4 weeks) ----
-      const monthlyData: MonthlyDataPoint[] = [];
+      // ---- LAST 4 WEEKS TREND (Rolling weeks) ----
+      const last4WeeksTrend: Last4WeeksDataPoint[] = [];
 
       for (let week = 3; week >= 0; week--) {
         const weekStart = new Date();
@@ -645,7 +667,7 @@ export function useAnalytics() {
 
           daysInWeek++;
           const dateStr = getDateString(checkDate);
-          weekCompletions += completions.filter(
+          weekCompletions += recentCompletions.filter(
             (c) => c.completed_date === dateStr,
           ).length;
         }
@@ -656,21 +678,85 @@ export function useAnalytics() {
             ? Math.round((weekCompletions / maxPossible) * 100)
             : 0;
 
-        monthlyData.push({
-          week: `Week ${4 - week}`,
+        // Create date range label for clarity
+        const startStr = format(weekStart, "MMM d");
+        const endStr = format(weekEnd, "MMM d");
+
+        last4WeeksTrend.push({
+          week: `${startStr} - ${endStr}`,
           rate: Math.min(100, rate),
         });
       }
 
-      // ---- PER-HABIT STATS ----
+      // ---- MONTHLY TREND (Last 12 months, grouped by calendar month) ----
+      const monthlyTrend: MonthlyTrendDataPoint[] = [];
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+
+      for (let i = 11; i >= 0; i--) {
+        const monthDate = subMonths(today, i);
+        const monthStart = startOfMonth(monthDate);
+        const monthEnd = endOfMonth(monthDate);
+        const monthKey = format(monthDate, "yyyy-MM");
+        const monthLabel = monthNames[monthDate.getMonth()];
+
+        // For current month, only count up to today
+        const effectiveEnd = i === 0 ? today : monthEnd;
+
+        // Calculate days in this period
+        const periodStart = monthStart;
+        const periodEnd = effectiveEnd;
+
+        // Count days from month start to effective end (inclusive)
+        let daysInPeriod = 0;
+        let periodCompletions = 0;
+
+        // Iterate through each day in the month
+        let currentDate = new Date(periodStart);
+        while (currentDate <= periodEnd) {
+          daysInPeriod++;
+          const dateStr = format(currentDate, "yyyy-MM-dd");
+          periodCompletions += completions.filter(
+            (c) => c.completed_date === dateStr,
+          ).length;
+          currentDate = addDays(currentDate, 1);
+        }
+
+        const maxPossible = habitCount * daysInPeriod;
+        const rate =
+          maxPossible > 0
+            ? Math.round((periodCompletions / maxPossible) * 100)
+            : 0;
+
+        monthlyTrend.push({
+          month: monthLabel,
+          monthKey,
+          rate: Math.min(100, rate),
+          completions: periodCompletions,
+          possible: maxPossible,
+        });
+      }
+
+      // ---- PER-HABIT STATS (Based on last 30 days) ----
       const habitStats: HabitStatData[] = habits.map((habit) => {
-        const habitCompletions = completions.filter(
+        const habitCompletions = recentCompletions.filter(
           (c) => c.habit_id === habit.id,
         ).length;
 
         // Calculate rate based on days since habit was created (max 30)
         const createdDate = new Date(habit.created_at);
-        const today = new Date();
         const daysSinceCreated = Math.min(
           30,
           Math.ceil(
@@ -693,10 +779,12 @@ export function useAnalytics() {
       });
 
       // ---- AGGREGATE STATS ----
-      const totalCompletions = completions.length;
+      const totalCompletions = recentCompletions.length;
 
-      // Count unique days with at least one completion
-      const uniqueDays = new Set(completions.map((c) => c.completed_date));
+      // Count unique days with at least one completion (last 30 days)
+      const uniqueDays = new Set(
+        recentCompletions.map((c) => c.completed_date),
+      );
       const totalDaysTracked = uniqueDays.size;
 
       // Find best individual habit streak
@@ -704,7 +792,7 @@ export function useAnalytics() {
 
       for (const habit of habits) {
         const habitCompletionDates = new Set(
-          completions
+          recentCompletions
             .filter((c) => c.habit_id === habit.id)
             .map((c) => c.completed_date),
         );
@@ -741,7 +829,8 @@ export function useAnalytics() {
 
       return {
         weeklyData,
-        monthlyData,
+        last4WeeksTrend,
+        monthlyTrend,
         habitStats,
         totalDaysTracked,
         totalCompletions,
