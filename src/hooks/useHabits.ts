@@ -11,6 +11,9 @@ import {
   startOfMonth,
   endOfMonth,
   subMonths,
+  startOfWeek,
+  endOfWeek,
+  subWeeks,
 } from "date-fns";
 
 export interface Habit {
@@ -646,28 +649,30 @@ export function useAnalytics() {
         });
       }
 
-      // ---- LAST 4 WEEKS TREND (Rolling weeks) ----
+      // ---- LAST 4 WEEKS TREND (Fixed calendar weeks: Monday-Sunday) ----
       const last4WeeksTrend: Last4WeeksDataPoint[] = [];
 
-      for (let week = 3; week >= 0; week--) {
-        const weekStart = new Date();
-        weekStart.setDate(weekStart.getDate() - (week * 7 + 6));
-        const weekEnd = new Date();
-        weekEnd.setDate(weekEnd.getDate() - week * 7);
+      // Get the current week's Monday (ISO week starts on Monday)
+      const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+
+      // Generate 4 fixed calendar weeks (oldest to newest)
+      for (let weekOffset = 3; weekOffset >= 0; weekOffset--) {
+        const weekStart = subWeeks(currentWeekStart, weekOffset);
+        const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
 
         let weekCompletions = 0;
         let daysInWeek = 0;
 
+        // Iterate through each day of the week (Monday to Sunday)
         for (let d = 0; d < 7; d++) {
-          const checkDate = new Date(weekStart);
-          checkDate.setDate(weekStart.getDate() + d);
+          const checkDate = addDays(weekStart, d);
 
           // Don't count future days
-          if (checkDate > new Date()) break;
+          if (checkDate > today) break;
 
           daysInWeek++;
-          const dateStr = getDateString(checkDate);
-          weekCompletions += recentCompletions.filter(
+          const dateStr = format(checkDate, "yyyy-MM-dd");
+          weekCompletions += completions.filter(
             (c) => c.completed_date === dateStr,
           ).length;
         }
@@ -678,7 +683,7 @@ export function useAnalytics() {
             ? Math.round((weekCompletions / maxPossible) * 100)
             : 0;
 
-        // Create date range label for clarity
+        // Create date range label (Mon - Sun)
         const startStr = format(weekStart, "MMM d");
         const endStr = format(weekEnd, "MMM d");
 

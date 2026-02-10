@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Calendar, Target, Flame, TrendingUp, Loader2 } from "lucide-react";
 import { HabitCheckbox } from "@/components/HabitCheckbox";
 import { ProgressRing } from "@/components/ProgressRing";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CelebrationModal } from "@/components/CelebrationModal";
 import {
   useHabits,
   useTodayCompletions,
@@ -30,6 +31,11 @@ export default function Overview() {
   // Track whether we're in the urgency window (last 5 hours of the day)
   const [showUrgency, setShowUrgency] = useState(isUrgencyTime);
 
+  // Celebration modal state
+  const [showCelebration, setShowCelebration] = useState(false);
+  // Track the previous "all completed" state to detect transition
+  const wasAllCompletedRef = useRef<boolean | null>(null);
+
   // Update urgency state every minute
   useEffect(() => {
     const checkUrgency = () => setShowUrgency(isUrgencyTime());
@@ -39,8 +45,26 @@ export default function Overview() {
 
   const isLoading = habitsLoading || completionsLoading;
 
-  // Create a Set of completed habit IDs for quick lookup
+  // Derive "all completed" status
   const completedHabitIds = new Set(completions.map((c) => c.habit_id));
+  const isAllCompleted =
+    !isLoading &&
+    habits.length > 0 &&
+    habits.every((h) => completedHabitIds.has(h.id));
+
+  // Detect transition from "not all completed" → "all completed"
+  useEffect(() => {
+    // Skip during initial loading
+    if (isLoading) return;
+
+    // If we have habits and weren't previously all completed, but now we are
+    if (wasAllCompletedRef.current === false && isAllCompleted) {
+      setShowCelebration(true);
+    }
+
+    // Update the ref for next comparison
+    wasAllCompletedRef.current = isAllCompleted;
+  }, [isAllCompleted, isLoading]);
 
   // Merge habits with today's completion status
   const habitsWithStatus = habits.map((habit) => ({
@@ -193,6 +217,13 @@ export default function Overview() {
           </CardContent>
         </Card>
       )}
+
+      {/* Celebration Modal */}
+      <CelebrationModal
+        open={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        autoCloseDelay={3000}
+      />
     </div>
   );
 }
