@@ -1,11 +1,4 @@
-import {
-  Calendar,
-  Target,
-  TrendingUp,
-  Sparkles,
-  Loader2,
-  Flame,
-} from "lucide-react";
+import { Calendar, Target, TrendingUp, Loader2, Flame } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/StatCard";
 import { ProgressRing } from "@/components/ProgressRing";
@@ -385,24 +378,6 @@ export default function Analysis() {
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* AI Insights Placeholder */}
-      <Card variant="feature" className="border-primary/20">
-        <CardContent className="flex items-center gap-4 py-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <Sparkles className="h-6 w-6 text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold">AI Insights</p>
-            <p className="text-sm text-muted-foreground">
-              Personalized suggestions and pattern recognition coming soon.
-            </p>
-          </div>
-          <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">
-            Coming Soon
-          </span>
         </CardContent>
       </Card>
     </div>

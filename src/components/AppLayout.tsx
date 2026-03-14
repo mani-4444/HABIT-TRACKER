@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   ListChecks,
   BarChart3,
+  Brain,
   LogOut,
   Menu,
   X,
@@ -20,6 +21,7 @@ const navItems = [
   { label: "Today", href: "/app/today", icon: CalendarCheck },
   { label: "Manage Habits", href: "/app/habits", icon: ListChecks },
   { label: "Analysis", href: "/app/analysis", icon: BarChart3 },
+  { label: "AI Insights", href: "/app/ai", icon: Brain },
 ];
 
 export function AppLayout() {
