@@ -88,6 +88,31 @@ npm run dev
 
 The app will be available at `http://localhost:5173`
 
+For local AI insights API development, run these in separate terminals:
+
+```bash
+npm run dev:vercel
+npm run dev
+```
+
+This starts the Vercel local runtime for `/api/*` and the Vite frontend with HMR.
+
+---
+
+## API Runtime
+
+AI insights API runs as a Vercel serverless function.
+
+Local development:
+
+- Run `npm run dev:vercel` (Vercel local API runtime on localhost:3000)
+- Run `npm run dev` (Vite frontend on localhost:8080)
+- Frontend requests to `/api/*` are proxied to the local Vercel runtime
+
+If this is your first time running Vercel locally, you may be prompted to authenticate in the terminal.
+
+If you run only `npm run dev`, frontend pages still work, but serverless endpoints are not guaranteed to be available.
+
 ---
 
 ## ⚙️ Environment Variables
@@ -135,6 +160,7 @@ HABIT-TRACKER/
 | Command              | Description                       |
 | -------------------- | --------------------------------- |
 | `npm run dev`        | Start development server with HMR |
+| `npm run dev:vercel` | Start Vercel local API runtime    |
 | `npm run build`      | Build for production              |
 | `npm run preview`    | Preview production build locally  |
 | `npm run lint`       | Run ESLint for code quality       |

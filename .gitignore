@@ -67,3 +67,5 @@ vite.config.ts.timestamp-*
 
 # Debug
 .debug/
+.vercel
+.env*.local

@@ -16,6 +16,7 @@ import Overview from "./pages/Overview";
 import ManageHabits from "./pages/ManageHabits";
 import Analysis from "./pages/Analysis";
 import DailyTodos from "./pages/DailyTodos";
+import AIInsights from "./pages/AIInsights";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="today" element={<DailyTodos />} />
                 <Route path="habits" element={<ManageHabits />} />
                 <Route path="analysis" element={<Analysis />} />
+                <Route path="ai" element={<AIInsights />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
