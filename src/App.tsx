@@ -18,6 +18,7 @@ import Analysis from "./pages/Analysis";
 import DailyTodos from "./pages/DailyTodos";
 import AIInsights from "./pages/AIInsights";
 import NotFound from "./pages/NotFound";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <div className="fixed right-4 top-4 z-[70] transition-colors duration-300">
+            <ThemeToggle />
+          </div>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />

@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 export default {
-  darkMode: ["class"],
+  darkMode: "class",
   content: [
     "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -19,7 +19,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+        sans: ["Manrope", "Segoe UI", "sans-serif"],
+        display: ["Fraunces", "Times New Roman", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -92,6 +93,8 @@ export default {
         "soft-lg":
           "0 4px 12px -2px hsl(var(--foreground) / 0.08), 0 8px 24px -4px hsl(var(--foreground) / 0.1)",
         "inner-soft": "inset 0 1px 2px hsl(var(--foreground) / 0.04)",
+        ambient:
+          "0 18px 40px -26px hsl(var(--foreground) / 0.35), 0 10px 20px -18px hsl(var(--primary) / 0.35)",
       },
       keyframes: {
         "accordion-down": {
@@ -130,6 +133,14 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        "float-slow": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-12px)" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { opacity: "0.85" },
+          "50%": { opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -141,6 +152,8 @@ export default {
           "celebration-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         confetti: "confetti 2.5s ease-out forwards",
         "bounce-slow": "bounce-slow 1s ease-in-out infinite",
+        "float-slow": "float-slow 5s ease-in-out infinite",
+        "pulse-glow": "pulse-glow 4s ease-in-out infinite",
       },
     },
   },

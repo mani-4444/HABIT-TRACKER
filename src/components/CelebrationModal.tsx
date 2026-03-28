@@ -121,14 +121,14 @@ export function CelebrationModal({
 
       {/* Modal content */}
       <div className="relative z-10 w-[90vw] max-w-md mx-4 animate-celebration-enter">
-        <div className="bg-background border border-border rounded-2xl shadow-2xl p-8 text-center relative overflow-hidden">
+        <div className="bg-background/90 backdrop-blur-xl border border-border/50 rounded-[2rem] shadow-2xl p-10 text-center relative overflow-hidden ring-1 ring-white/10">
           {/* Gradient background accent */}
           <div className="absolute inset-0 bg-gradient-to-br from-success/10 via-transparent to-primary/10 pointer-events-none" />
 
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="absolute top-5 right-5 p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted shadow-sm hover:shadow transition-all duration-200"
             aria-label="Close celebration modal"
           >
             <X className="h-5 w-5" />
@@ -136,8 +136,7 @@ export function CelebrationModal({
 
           {/* Content */}
           <div className="relative z-10 space-y-4">
-            {/* Big emoji with bounce */}
-            <div className="text-6xl animate-bounce-slow">🎉</div>
+            <div className="text-7xl animate-bounce drop-shadow-lg mb-4">🎉</div>
 
             {/* Title */}
             <h2

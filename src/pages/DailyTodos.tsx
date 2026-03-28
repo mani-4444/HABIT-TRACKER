@@ -83,7 +83,7 @@ export default function DailyTodos() {
       </div>
 
       {/* Add Task Form */}
-      <Card>
+      <Card className="rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border-border/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Add a Task</CardTitle>
         </CardHeader>
@@ -113,7 +113,7 @@ export default function DailyTodos() {
       </Card>
 
       {/* Task List */}
-      <Card>
+      <Card className="rounded-3xl shadow-sm border-border/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Tasks</CardTitle>
         </CardHeader>
@@ -124,10 +124,10 @@ export default function DailyTodos() {
                 <li
                   key={todo.id}
                   className={cn(
-                    "group flex items-center gap-3 rounded-lg border p-3 transition-colors",
+                    "group flex items-center gap-4 rounded-2xl border p-4 transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-1",
                     todo.completed
-                      ? "border-muted bg-muted/50"
-                      : "border-border bg-background hover:bg-accent/50",
+                      ? "border-muted bg-muted/30"
+                      : "border-border/50 bg-background hover:bg-accent/30",
                   )}
                 >
                   <button

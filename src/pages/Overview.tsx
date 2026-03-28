@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Calendar, Target, Flame, TrendingUp, Loader2 } from "lucide-react";
+import {
+  Calendar,
+  Target,
+  Flame,
+  TrendingUp,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import { HabitCheckbox } from "@/components/HabitCheckbox";
 import { ProgressRing } from "@/components/ProgressRing";
 import { StatCard } from "@/components/StatCard";
@@ -52,7 +59,7 @@ export default function Overview() {
     habits.length > 0 &&
     habits.every((h) => completedHabitIds.has(h.id));
 
-  // Detect transition from "not all completed" → "all completed"
+  // Detect transition from "not all completed" -> "all completed"
   useEffect(() => {
     // Skip during initial loading
     if (isLoading) return;
@@ -91,18 +98,27 @@ export default function Overview() {
 
   return (
     <div className="space-y-8 pb-20 lg:pb-0">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold lg:text-3xl">Good morning! ☀️</h1>
-        <p className="text-muted-foreground mt-1">
-          Let's build some consistency today.
-        </p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Daily Overview
+          </p>
+          <h1 className="font-display text-4xl font-bold leading-tight lg:text-5xl">
+            Good morning!<span className="ml-2">☀️</span>
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Let&apos;s build some consistency today.
+          </p>
+        </div>
+
+        <div className="inline-flex items-center gap-2 self-start rounded-full border border-border/70 bg-card/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:self-auto">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          Focus mode enabled
+        </div>
       </div>
 
-      {/* Progress & Stats */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {/* Daily Progress */}
-        <Card className="md:col-span-2 lg:col-span-1">
+        <Card className="md:col-span-2 lg:col-span-1 rounded-[1.7rem] border-border/50 bg-gradient-to-b from-card to-accent/20 shadow-soft hover:-translate-y-0.5 hover:shadow-soft-lg">
           <CardContent className="flex items-center justify-center py-6">
             <ProgressRing
               progress={progressPercent}
@@ -110,10 +126,12 @@ export default function Overview() {
               strokeWidth={10}
             >
               <div className="text-center">
-                <p className="text-3xl font-bold">
+                <p className="font-display text-4xl font-bold">
                   {completedCount}/{totalCount}
                 </p>
-                <p className="text-xs text-muted-foreground">completed</p>
+                <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                  completed
+                </p>
               </div>
             </ProgressRing>
           </CardContent>
@@ -149,15 +167,14 @@ export default function Overview() {
         />
       </div>
 
-      {/* Today's Habits */}
-      <Card>
+      <Card className="rounded-[1.7rem] border-border/55 bg-card/85 shadow-soft">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">
-              Today's Habits
+            <CardTitle className="font-display text-2xl font-bold">
+              Today&apos;s Habits
             </CardTitle>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
+            <div className="flex items-center gap-2 rounded-full border border-border/70 bg-secondary/55 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5" />
               <span>{today}</span>
             </div>
           </div>
@@ -168,7 +185,7 @@ export default function Overview() {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : habitsWithStatus.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
+            <p className="py-8 text-center text-muted-foreground">
               No habits yet. Go to Manage Habits to add some!
             </p>
           ) : (
@@ -196,29 +213,27 @@ export default function Overview() {
         </CardContent>
       </Card>
 
-      {/* Encouragement */}
       {progressPercent === 100 && totalCount > 0 && (
         <Card
           variant="feature"
-          className="border-success/30 bg-success-muted animate-fade-in"
+          className="animate-fade-in rounded-[1.7rem] border-success/30 bg-success-muted shadow-soft"
         >
           <CardContent className="flex items-center gap-4 py-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success text-2xl">
               🎉
             </div>
             <div>
-              <p className="font-semibold text-success">
+              <p className="font-display text-xl font-bold text-success">
                 All habits completed!
               </p>
               <p className="text-sm text-muted-foreground">
-                Amazing work! You're building real consistency.
+                Amazing work! You&apos;re building real consistency.
               </p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Celebration Modal */}
       <CelebrationModal
         open={showCelebration}
         onClose={() => setShowCelebration(false)}

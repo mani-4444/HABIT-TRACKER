@@ -78,7 +78,7 @@ export default function Analysis() {
 
       {/* Overview Stats */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="md:col-span-2 lg:col-span-1">
+        <Card className="md:col-span-2 lg:col-span-1 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border-border/50">
           <CardContent className="flex items-center justify-center py-6">
             <ProgressRing progress={overallRate} size={120} strokeWidth={10}>
               <div className="text-center">
@@ -121,7 +121,7 @@ export default function Analysis() {
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Weekly Chart */}
-        <Card>
+        <Card className="rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border-border/50">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">This Week</CardTitle>
           </CardHeader>
@@ -170,7 +170,7 @@ export default function Analysis() {
         </Card>
 
         {/* Last 4 Weeks Trend */}
-        <Card>
+        <Card className="rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border-border/50">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">
               Last 4 Weeks Trend
@@ -237,7 +237,7 @@ export default function Analysis() {
       </div>
 
       {/* Monthly Trend Chart */}
-      <Card>
+      <Card className="rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border-border/50">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">Monthly Trend</CardTitle>
         </CardHeader>
@@ -292,7 +292,7 @@ export default function Analysis() {
       </Card>
 
       {/* Per-Habit Stats */}
-      <Card>
+      <Card className="rounded-3xl shadow-sm border-border/50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold">
@@ -325,7 +325,7 @@ export default function Analysis() {
                 return (
                   <div
                     key={habit.id}
-                    className="flex items-center gap-4 animate-slide-in"
+                    className="flex items-center gap-4 animate-slide-in rounded-2xl bg-card p-4 border border-border/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <span className="text-xl">{habit.emoji}</span>
