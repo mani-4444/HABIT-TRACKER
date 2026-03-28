@@ -20,6 +20,23 @@
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@HabitTracker" />
+
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem("habittracker-theme");
+        const systemPrefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        const theme =
+          savedTheme === "light" || savedTheme === "dark"
+            ? savedTheme
+            : systemPrefersDark
+              ? "dark"
+              : "light";
+
+        document.documentElement.classList.toggle("dark", theme === "dark");
+      })();
+    </script>
   </head>
 
   <body>

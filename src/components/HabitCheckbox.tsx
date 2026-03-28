@@ -31,21 +31,21 @@ export function HabitCheckbox({
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        "group flex w-full items-center gap-4 rounded-xl border p-4 transition-all duration-200",
-        "hover:border-primary/30 hover:bg-accent/50",
+        "group flex w-full items-center gap-4 rounded-2xl border p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md",
+        "hover:border-primary/30 hover:bg-accent/30",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         checked
-          ? "border-success/30 bg-success-muted"
-          : "border-border bg-card shadow-soft",
+          ? "border-success/30 bg-success-muted shadow-sm"
+          : "border-border/50 bg-card shadow-sm",
         disabled && "cursor-not-allowed opacity-50",
       )}
     >
       <div
         className={cn(
-          "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200",
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-300",
           checked
-            ? "border-success bg-success"
-            : "border-muted-foreground/30 bg-background group-hover:border-primary/50",
+            ? "border-success bg-success shadow-inner"
+            : "border-border bg-background shadow-inner group-hover:border-primary/50 group-hover:bg-primary/5",
         )}
       >
         {checked && (

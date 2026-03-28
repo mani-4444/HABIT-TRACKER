@@ -135,7 +135,7 @@ export default function ManageHabits() {
       </div>
 
       {/* Add Habit Form */}
-      <Card>
+      <Card className="rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border-border/50">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">Add New Habit</CardTitle>
         </CardHeader>
@@ -161,10 +161,10 @@ export default function ManageHabits() {
                   key={emoji}
                   type="button"
                   onClick={() => setSelectedEmoji(emoji)}
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg text-xl transition-all ${
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl text-xl transition-all duration-200 hover:scale-110 ${
                     selectedEmoji === emoji
-                      ? "bg-primary/10 ring-2 ring-primary"
-                      : "bg-muted hover:bg-accent"
+                      ? "bg-primary/20 ring-2 ring-primary shadow-sm"
+                      : "bg-muted hover:bg-accent shadow-inner"
                   }`}
                 >
                   {emoji}
@@ -189,7 +189,7 @@ export default function ManageHabits() {
       </Card>
 
       {/* Habits List */}
-      <Card>
+      <Card className="rounded-3xl shadow-sm border-border/50">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">
             Your Habits ({habits.length})
@@ -205,7 +205,7 @@ export default function ManageHabits() {
               {habits.map((habit, index) => (
                 <div
                   key={habit.id}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 animate-slide-in"
+                  className="flex items-center gap-4 rounded-2xl border border-border/50 bg-card p-5 animate-slide-in shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <span className="text-xl">{habit.emoji}</span>
