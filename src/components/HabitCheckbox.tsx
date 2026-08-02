@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check, Flame, Clock } from "lucide-react";
+import { Check, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HabitCheckboxProps {
@@ -10,7 +10,6 @@ interface HabitCheckboxProps {
   disabled?: boolean;
   streak?: number;
   isAtRisk?: boolean;
-  showUrgency?: boolean;
 }
 
 export function HabitCheckbox({
@@ -21,7 +20,6 @@ export function HabitCheckbox({
   disabled = false,
   streak,
   isAtRisk = false,
-  showUrgency = false,
 }: HabitCheckboxProps) {
   return (
     <button
@@ -31,7 +29,7 @@ export function HabitCheckbox({
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        "group flex w-full items-center gap-4 rounded-2xl border p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md",
+        "group flex w-full items-center gap-4 rounded-2xl border p-4 transition-colors duration-150",
         "hover:border-primary/30 hover:bg-accent/30",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         checked
@@ -42,15 +40,13 @@ export function HabitCheckbox({
     >
       <div
         className={cn(
-          "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-300",
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-colors duration-150",
           checked
             ? "border-success bg-success shadow-inner"
             : "border-border bg-background shadow-inner group-hover:border-primary/50 group-hover:bg-primary/5",
         )}
       >
-        {checked && (
-          <Check className="h-4 w-4 text-success-foreground animate-check-bounce" />
-        )}
+        {checked && <Check className="h-4 w-4 text-success-foreground" />}
       </div>
 
       <div className="flex flex-1 items-center gap-3">
@@ -65,21 +61,11 @@ export function HabitCheckbox({
         </span>
       </div>
 
-      {/* Urgency timer icon - shown when day is almost over and habit not completed */}
-      {showUrgency && !checked && (
-        <div
-          className="flex items-center text-amber-500 animate-pulse"
-          title="Only a few hours left today!"
-        >
-          <Clock className="h-4 w-4" />
-        </div>
-      )}
-
-      {/* Streak indicator - always visible */}
+      {/* Streak indicator - simple, static presentation */}
       {streak !== undefined && (
         <div
           className={cn(
-            "flex items-center gap-1",
+            "flex items-center gap-1 text-sm font-semibold",
             streak === 0
               ? "text-muted-foreground/50"
               : isAtRisk
@@ -88,16 +74,14 @@ export function HabitCheckbox({
           )}
           title={
             isAtRisk && streak > 0
-              ? `${streak} day streak at risk! Complete to maintain.`
+              ? `${streak} day streak (pending today)`
               : streak > 0
                 ? `${streak} day streak`
                 : "No active streak"
           }
         >
-          <Flame
-            className={cn("h-4 w-4", isAtRisk && streak > 0 && "animate-pulse")}
-          />
-          <span className="text-sm font-semibold">{streak}</span>
+          <Flame className="h-4 w-4" />
+          <span>{streak}</span>
         </div>
       )}
     </button>

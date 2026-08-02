@@ -12,7 +12,7 @@ interface HabitRow {
 
 interface CompletionRow {
   habit_id: string;
-  completed_date: string;
+  completed_at: string;
 }
 
 interface TodoRow {
@@ -118,9 +118,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const [completionsRes, todosRes] = await Promise.all([
       supabase
         .from("habit_completions")
-        .select("habit_id, completed_date")
+        .select("habit_id, completed_at")
         .in("habit_id", habitIds)
-        .gte("completed_date", since),
+        .gte("completed_at", since),
       supabase
         .from("daily_todos")
         .select("completed")
@@ -146,7 +146,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Per-habit stats
     const perHabit = habits.map((h) => {
       const hCompletions = completions.filter((c) => c.habit_id === h.id);
-      const dates = hCompletions.map((c) => c.completed_date);
+      const dates = hCompletions.map((c) => c.completed_at.slice(0, 10));
       return {
         name: `${h.emoji} ${h.name}`,
         completions: hCompletions.length,
