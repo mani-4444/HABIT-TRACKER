@@ -33,14 +33,14 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'habit_completions' AND column_name = 'completed_at'
   ) THEN
     ALTER TABLE public.habit_completions ADD COLUMN completed_at TIMESTAMPTZ DEFAULT now();
-    
-    -- Backfill completed_at from existing completed_date if present
-    IF EXISTS (
-      SELECT 1 FROM information_schema.columns 
-      WHERE table_schema = 'public' AND table_name = 'habit_completions' AND column_name = 'completed_date'
-    ) THEN
-      EXECUTE 'UPDATE public.habit_completions SET completed_at = (completed_date::text || '' 12:00:00+00'')::timestamptz WHERE completed_at IS NULL';
-    END IF;
+  END IF;
+
+  -- Always backfill completed_at from completed_date if completed_date column exists
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'habit_completions' AND column_name = 'completed_date'
+  ) THEN
+    EXECUTE 'UPDATE public.habit_completions SET completed_at = (completed_date::text || '' 12:00:00+00'')::timestamptz WHERE completed_date IS NOT NULL';
   END IF;
 END $$;
 
