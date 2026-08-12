@@ -5,8 +5,6 @@ import { useMemo } from "react";
 import {
   format,
   subDays,
-  parseISO,
-  differenceInDays,
   addDays,
   startOfMonth,
   endOfMonth,
@@ -14,7 +12,17 @@ import {
   startOfWeek,
   endOfWeek,
   subWeeks,
+  startOfDay,
+  addDays as dateFnsAddDays,
 } from "date-fns";
+import {
+  calculatePerHabitStreak,
+  calculatePerfectDayStreak,
+  calculateHabitConsistency,
+  calculateHabitCorrelations,
+  normalizeDateString,
+  HabitCorrelation,
+} from "@/lib/streaks";
 
 export interface Habit {
   id: string;
@@ -128,25 +136,23 @@ export function useDeleteHabit() {
 export interface HabitCompletion {
   id: string;
   habit_id: string;
-  completed_date: string;
+  completed_at: string;
   created_at: string;
 }
 
-// Get today's date in YYYY-MM-DD format (for database queries)
+// Get today's date in YYYY-MM-DD format
 export function getTodayDateString(): string {
-  const today = new Date();
-  return today.toISOString().split("T")[0];
+  return format(new Date(), "yyyy-MM-dd");
 }
 
 // Fetch today's completions for the current user's habits
 export function useTodayCompletions() {
   const { user } = useAuth();
-  const today = getTodayDateString();
+  const todayDateStr = getTodayDateString();
 
   return useQuery({
-    queryKey: ["completions", today, user?.id],
+    queryKey: ["completions", todayDateStr, user?.id],
     queryFn: async () => {
-      // First get user's habit IDs, then get completions for those habits
       const { data: habits, error: habitsError } = await supabase
         .from("habits")
         .select("id")
@@ -157,11 +163,15 @@ export function useTodayCompletions() {
       const habitIds = habits?.map((h) => h.id) || [];
       if (habitIds.length === 0) return [];
 
+      const startOfToday = startOfDay(new Date());
+      const startOfTomorrow = dateFnsAddDays(startOfToday, 1);
+
       const { data, error } = await supabase
         .from("habit_completions")
         .select("*")
         .in("habit_id", habitIds)
-        .eq("completed_date", today);
+        .gte("completed_at", startOfToday.toISOString())
+        .lt("completed_at", startOfTomorrow.toISOString());
 
       if (error) throw error;
       return data as HabitCompletion[];
@@ -173,7 +183,6 @@ export function useTodayCompletions() {
 // Toggle a habit completion for today
 export function useToggleCompletion() {
   const queryClient = useQueryClient();
-  const today = getTodayDateString();
 
   return useMutation({
     mutationFn: async ({
@@ -183,20 +192,24 @@ export function useToggleCompletion() {
       habitId: string;
       isCurrentlyCompleted: boolean;
     }) => {
+      const startOfToday = startOfDay(new Date());
+      const startOfTomorrow = dateFnsAddDays(startOfToday, 1);
+
       if (isCurrentlyCompleted) {
-        // Delete the completion
+        // Delete today's completion
         const { error } = await supabase
           .from("habit_completions")
           .delete()
           .eq("habit_id", habitId)
-          .eq("completed_date", today);
+          .gte("completed_at", startOfToday.toISOString())
+          .lt("completed_at", startOfTomorrow.toISOString());
 
         if (error) throw error;
       } else {
-        // Insert a new completion
+        // Insert a new completion with TIMESTAMPTZ
         const { error } = await supabase.from("habit_completions").insert({
           habit_id: habitId,
-          completed_date: today,
+          completed_at: new Date().toISOString(),
         });
 
         if (error) throw error;
@@ -212,13 +225,13 @@ export function useToggleCompletion() {
 }
 
 // ============================================
-// STREAK STATISTICS (Per-Habit)
+// STREAK STATISTICS (Per-Habit & Overall)
 // ============================================
 
 export interface StreakStats {
   currentStreak: number;
   bestStreak: number;
-  isAtRisk: boolean; // true if streak is from yesterday (not completed today)
+  isAtRisk: boolean;
   completedToday: boolean;
 }
 
@@ -232,14 +245,7 @@ export interface OverallStreakStats {
 }
 
 /**
- * Calculate streak stats for all habits.
- *
- * Streak Algorithm:
- * - currentStreak: Count consecutive completed days ending TODAY.
- *   If habit is NOT completed today, currentStreak = 0.
- * - bestStreak: Maximum consecutive days ever achieved.
- *
- * Uses date-fns for safe date handling to avoid timezone issues.
+ * Fetch and compute streak stats for all active habits using the shared streaks utility.
  */
 export function useHabitStreakStats() {
   const { user } = useAuth();
@@ -247,7 +253,6 @@ export function useHabitStreakStats() {
   const query = useQuery({
     queryKey: ["streakStats", user?.id],
     queryFn: async () => {
-      // Get user's active habits
       const { data: habits, error: habitsError } = await supabase
         .from("habits")
         .select("id, name")
@@ -255,20 +260,20 @@ export function useHabitStreakStats() {
 
       if (habitsError) throw habitsError;
       if (!habits || habits.length === 0) {
-        return { streakMap: {} as HabitStreakMap, habits: [] };
+        return { completions: [], habits: [] };
       }
 
       const habitIds = habits.map((h) => h.id);
 
-      // Fetch completions for last 365 days (sufficient for streak calculation)
-      const oneYearAgo = format(subDays(new Date(), 365), "yyyy-MM-dd");
+      // Fetch completions for last 365 days
+      const oneYearAgo = startOfDay(subDays(new Date(), 365));
 
       const { data: completions, error: completionsError } = await supabase
         .from("habit_completions")
-        .select("habit_id, completed_date")
+        .select("habit_id, completed_at")
         .in("habit_id", habitIds)
-        .gte("completed_date", oneYearAgo)
-        .order("completed_date", { ascending: false });
+        .gte("completed_at", oneYearAgo.toISOString())
+        .order("completed_at", { ascending: false });
 
       if (completionsError) throw completionsError;
 
@@ -277,9 +282,8 @@ export function useHabitStreakStats() {
     enabled: !!user,
   });
 
-  // Memoize streak calculations to avoid recomputing on every render
   const streakData = useMemo(() => {
-    if (!query.data) {
+    if (!query.data || !query.data.habits) {
       return {
         streakMap: {} as HabitStreakMap,
         overall: {
@@ -290,100 +294,40 @@ export function useHabitStreakStats() {
     }
 
     const { completions, habits } = query.data;
-    if (!completions || !habits) {
-      return {
-        streakMap: {} as HabitStreakMap,
-        overall: {
-          bestStreak: { days: 0, habitName: "-", habitId: "" },
-          currentStreak: { days: 0, habitName: "-", habitId: "" },
-        } as OverallStreakStats,
-      };
-    }
-
-    const todayStr = format(new Date(), "yyyy-MM-dd");
-    const yesterdayStr = format(subDays(new Date(), 1), "yyyy-MM-dd");
+    const todayStr = getTodayDateString();
     const streakMap: HabitStreakMap = {};
 
     let overallBest = { days: 0, habitName: "-", habitId: "" };
     let overallCurrent = { days: 0, habitName: "-", habitId: "" };
 
     for (const habit of habits) {
-      // Get this habit's completion dates as a Set for O(1) lookup
-      const habitCompletionDates = new Set(
-        completions
-          .filter((c) => c.habit_id === habit.id)
-          .map((c) => c.completed_date),
+      const habitCompletions = completions.filter((c) => c.habit_id === habit.id);
+      const completionDates = habitCompletions.map((c) => c.completed_at);
+
+      const streak = calculatePerHabitStreak(completionDates);
+
+      const completedToday = habitCompletions.some(
+        (c) => normalizeDateString(c.completed_at) === todayStr,
       );
 
-      const completedToday = habitCompletionDates.has(todayStr);
-      const completedYesterday = habitCompletionDates.has(yesterdayStr);
-
-      // Calculate current streak with new algorithm:
-      // - If completed today: compute streak ending today
-      // - Else if completed yesterday: compute streak ending yesterday (at risk)
-      // - Else: streak = 0
-      let currentStreak = 0;
-      let isAtRisk = false;
-
-      if (completedToday) {
-        // Streak is active, count from today backwards
-        currentStreak = 1;
-        let checkDate = subDays(new Date(), 1);
-
-        while (habitCompletionDates.has(format(checkDate, "yyyy-MM-dd"))) {
-          currentStreak++;
-          checkDate = subDays(checkDate, 1);
-        }
-      } else if (completedYesterday) {
-        // Streak is at risk, count from yesterday backwards
-        isAtRisk = true;
-        currentStreak = 1;
-        let checkDate = subDays(new Date(), 2); // Start from day before yesterday
-
-        while (habitCompletionDates.has(format(checkDate, "yyyy-MM-dd"))) {
-          currentStreak++;
-          checkDate = subDays(checkDate, 1);
-        }
-      }
-      // else: currentStreak remains 0
-
-      // Calculate best streak by iterating through sorted dates
-      const sortedDates = Array.from(habitCompletionDates).sort();
-      let bestStreak = sortedDates.length > 0 ? 1 : 0;
-      let tempStreak = 1;
-
-      for (let i = 1; i < sortedDates.length; i++) {
-        const prevDate = parseISO(sortedDates[i - 1]);
-        const currDate = parseISO(sortedDates[i]);
-        const diff = differenceInDays(currDate, prevDate);
-
-        if (diff === 1) {
-          tempStreak++;
-          bestStreak = Math.max(bestStreak, tempStreak);
-        } else if (diff > 1) {
-          tempStreak = 1;
-        }
-        // diff === 0 means duplicate date, ignore
-      }
-
       streakMap[habit.id] = {
-        currentStreak,
-        bestStreak,
-        isAtRisk,
+        currentStreak: streak.current,
+        bestStreak: streak.best,
+        isAtRisk: streak.isAtRisk,
         completedToday,
       };
 
-      // Update overall stats
-      if (bestStreak > overallBest.days) {
+      if (streak.best > overallBest.days) {
         overallBest = {
-          days: bestStreak,
+          days: streak.best,
           habitName: habit.name,
           habitId: habit.id,
         };
       }
-      if (currentStreak > overallCurrent.days) {
+
+      if (streak.current > overallCurrent.days) {
         overallCurrent = {
-          days: currentStreak,
+          days: streak.current,
           habitName: habit.name,
           habitId: habit.id,
         };
@@ -405,19 +349,12 @@ export function useHabitStreakStats() {
 }
 
 // ============================================
-// STATISTICS
+// OVERALL STATISTICS (Perfect Day Streak & Weekly Rate)
 // ============================================
 
-// Get date string for a specific date
-function getDateString(date: Date): string {
-  return date.toISOString().split("T")[0];
-}
-
-// Get the start of the current week (Monday)
 function getWeekStartDate(): Date {
   const today = new Date();
   const day = today.getDay();
-  // Adjust so Monday = 0, Sunday = 6
   const diff = day === 0 ? 6 : day - 1;
   const monday = new Date(today);
   monday.setDate(today.getDate() - diff);
@@ -425,22 +362,18 @@ function getWeekStartDate(): Date {
   return monday;
 }
 
-// Get number of days elapsed this week (1 = Monday only, 7 = full week)
 function getDaysElapsedThisWeek(): number {
   const today = new Date();
   const day = today.getDay();
-  // Monday = 1, Tuesday = 2, ..., Sunday = 7
   return day === 0 ? 7 : day;
 }
 
-// Fetch statistics: streak and weekly completion rate
 export function useHabitStats() {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ["stats", user?.id],
     queryFn: async () => {
-      // Get user's active habits
       const { data: habits, error: habitsError } = await supabase
         .from("habits")
         .select("id, created_at")
@@ -454,51 +387,31 @@ export function useHabitStats() {
       const habitIds = habits.map((h) => h.id);
       const habitCount = habits.length;
 
-      // Fetch all completions for the last 30 days (for streak calculation)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgo = startOfDay(subDays(new Date(), 30));
 
       const { data: allCompletions, error: completionsError } = await supabase
         .from("habit_completions")
-        .select("habit_id, completed_date")
+        .select("habit_id, completed_at")
         .in("habit_id", habitIds)
-        .gte("completed_date", getDateString(thirtyDaysAgo))
-        .order("completed_date", { ascending: false });
+        .gte("completed_at", thirtyDaysAgo.toISOString())
+        .order("completed_at", { ascending: false });
 
       if (completionsError) throw completionsError;
 
-      // Group completions by date
       const completionsByDate = new Map<string, Set<string>>();
       for (const c of allCompletions || []) {
-        if (!completionsByDate.has(c.completed_date)) {
-          completionsByDate.set(c.completed_date, new Set());
+        const dateStr = normalizeDateString(c.completed_at);
+        if (!completionsByDate.has(dateStr)) {
+          completionsByDate.set(dateStr, new Set());
         }
-        completionsByDate.get(c.completed_date)!.add(c.habit_id);
+        completionsByDate.get(dateStr)!.add(c.habit_id);
       }
 
-      // Calculate streak: consecutive days where ALL habits were completed
-      let streak = 0;
-      const today = new Date();
-
-      for (let i = 0; i < 30; i++) {
-        const checkDate = new Date(today);
-        checkDate.setDate(today.getDate() - i);
-        const dateStr = getDateString(checkDate);
-
-        const completedHabits = completionsByDate.get(dateStr);
-        const completedCount = completedHabits?.size || 0;
-
-        if (completedCount === habitCount) {
-          streak++;
-        } else {
-          // Streak breaks - but don't count today if it's incomplete
-          // (user might still complete habits today)
-          if (i === 0) {
-            continue; // Skip today, check yesterday
-          }
-          break;
-        }
-      }
+      // Calculate perfect day streak using unified utility
+      const { current: streak } = calculatePerfectDayStreak(
+        completionsByDate,
+        habitCount,
+      );
 
       // Calculate weekly completion percentage
       const weekStart = getWeekStartDate();
@@ -506,10 +419,8 @@ export function useHabitStats() {
 
       let weeklyCompletions = 0;
       for (let i = 0; i < daysElapsed; i++) {
-        const checkDate = new Date(weekStart);
-        checkDate.setDate(weekStart.getDate() + i);
-        const dateStr = getDateString(checkDate);
-
+        const checkDate = addDays(weekStart, i);
+        const dateStr = format(checkDate, "yyyy-MM-dd");
         const completedHabits = completionsByDate.get(dateStr);
         weeklyCompletions += completedHabits?.size || 0;
       }
@@ -545,8 +456,8 @@ export interface Last4WeeksDataPoint {
 }
 
 export interface MonthlyTrendDataPoint {
-  month: string; // "Jan", "Feb", etc.
-  monthKey: string; // "2024-01" for sorting
+  month: string;
+  monthKey: string;
   rate: number;
   completions: number;
   possible: number;
@@ -558,6 +469,8 @@ export interface HabitStatData {
   emoji: string;
   rate: number;
   completions: number;
+  stdDev: number;
+  consistencyScore: number;
 }
 
 export interface AnalyticsData {
@@ -565,20 +478,19 @@ export interface AnalyticsData {
   last4WeeksTrend: Last4WeeksDataPoint[];
   monthlyTrend: MonthlyTrendDataPoint[];
   habitStats: HabitStatData[];
+  correlations: HabitCorrelation[];
   totalDaysTracked: number;
   totalCompletions: number;
   bestStreak: { days: number; habitName: string };
   overallRate: number;
 }
 
-// Fetch comprehensive analytics data
 export function useAnalytics() {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ["analytics", user?.id],
     queryFn: async (): Promise<AnalyticsData> => {
-      // Get user's active habits
       const { data: habits, error: habitsError } = await supabase
         .from("habits")
         .select("id, name, emoji, created_at")
@@ -593,6 +505,7 @@ export function useAnalytics() {
           last4WeeksTrend: [],
           monthlyTrend: [],
           habitStats: [],
+          correlations: [],
           totalDaysTracked: 0,
           totalCompletions: 0,
           bestStreak: { days: 0, habitName: "-" },
@@ -603,29 +516,28 @@ export function useAnalytics() {
       const habitIds = habits.map((h) => h.id);
       const habitCount = habits.length;
 
-      // Fetch all completions for the last 12 months (for monthly trend)
       const today = new Date();
-      const twelveMonthsAgo = format(
-        subMonths(startOfMonth(today), 11),
-        "yyyy-MM-dd",
-      );
+      const twelveMonthsAgo = startOfDay(subMonths(startOfMonth(today), 11));
 
       const { data: allCompletions, error: completionsError } = await supabase
         .from("habit_completions")
-        .select("habit_id, completed_date")
+        .select("habit_id, completed_at")
         .in("habit_id", habitIds)
-        .gte("completed_date", twelveMonthsAgo)
-        .order("completed_date", { ascending: true });
+        .gte("completed_at", twelveMonthsAgo.toISOString())
+        .order("completed_at", { ascending: true });
 
       if (completionsError) throw completionsError;
 
-      const completions = allCompletions || [];
+      const completions = (allCompletions || []).map((c) => ({
+        habit_id: c.habit_id,
+        completed_at: c.completed_at,
+        dateStr: normalizeDateString(c.completed_at),
+      }));
 
-      // Filter completions for last 30 days (for weekly data and per-habit stats)
-      const thirtyDaysAgoDate = subDays(today, 30);
-      const thirtyDaysAgoStr = format(thirtyDaysAgoDate, "yyyy-MM-dd");
+      // Trailing 30 days completions
+      const thirtyDaysAgoStr = format(subDays(today, 30), "yyyy-MM-dd");
       const recentCompletions = completions.filter(
-        (c) => c.completed_date >= thirtyDaysAgoStr,
+        (c) => c.dateStr >= thirtyDaysAgoStr,
       );
 
       // ---- WEEKLY DATA (Last 7 days) ----
@@ -633,13 +545,12 @@ export function useAnalytics() {
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
       for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = getDateString(date);
+        const date = subDays(today, i);
+        const dateStr = format(date, "yyyy-MM-dd");
         const dayName = dayNames[date.getDay()];
 
         const dayCompletions = recentCompletions.filter(
-          (c) => c.completed_date === dateStr,
+          (c) => c.dateStr === dateStr,
         ).length;
 
         weeklyData.push({
@@ -649,13 +560,10 @@ export function useAnalytics() {
         });
       }
 
-      // ---- LAST 4 WEEKS TREND (Fixed calendar weeks: Monday-Sunday) ----
+      // ---- LAST 4 WEEKS TREND ----
       const last4WeeksTrend: Last4WeeksDataPoint[] = [];
-
-      // Get the current week's Monday (ISO week starts on Monday)
       const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
 
-      // Generate 4 fixed calendar weeks (oldest to newest)
       for (let weekOffset = 3; weekOffset >= 0; weekOffset--) {
         const weekStart = subWeeks(currentWeekStart, weekOffset);
         const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
@@ -663,17 +571,14 @@ export function useAnalytics() {
         let weekCompletions = 0;
         let daysInWeek = 0;
 
-        // Iterate through each day of the week (Monday to Sunday)
         for (let d = 0; d < 7; d++) {
           const checkDate = addDays(weekStart, d);
-
-          // Don't count future days
           if (checkDate > today) break;
 
           daysInWeek++;
           const dateStr = format(checkDate, "yyyy-MM-dd");
           weekCompletions += completions.filter(
-            (c) => c.completed_date === dateStr,
+            (c) => c.dateStr === dateStr,
           ).length;
         }
 
@@ -683,7 +588,6 @@ export function useAnalytics() {
             ? Math.round((weekCompletions / maxPossible) * 100)
             : 0;
 
-        // Create date range label (Mon - Sun)
         const startStr = format(weekStart, "MMM d");
         const endStr = format(weekEnd, "MMM d");
 
@@ -693,21 +597,11 @@ export function useAnalytics() {
         });
       }
 
-      // ---- MONTHLY TREND (Last 12 months, grouped by calendar month) ----
+      // ---- MONTHLY TREND ----
       const monthlyTrend: MonthlyTrendDataPoint[] = [];
       const monthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
       ];
 
       for (let i = 11; i >= 0; i--) {
@@ -717,24 +611,16 @@ export function useAnalytics() {
         const monthKey = format(monthDate, "yyyy-MM");
         const monthLabel = monthNames[monthDate.getMonth()];
 
-        // For current month, only count up to today
         const effectiveEnd = i === 0 ? today : monthEnd;
-
-        // Calculate days in this period
-        const periodStart = monthStart;
-        const periodEnd = effectiveEnd;
-
-        // Count days from month start to effective end (inclusive)
         let daysInPeriod = 0;
         let periodCompletions = 0;
 
-        // Iterate through each day in the month
-        let currentDate = new Date(periodStart);
-        while (currentDate <= periodEnd) {
+        let currentDate = new Date(monthStart);
+        while (currentDate <= effectiveEnd) {
           daysInPeriod++;
           const dateStr = format(currentDate, "yyyy-MM-dd");
           periodCompletions += completions.filter(
-            (c) => c.completed_date === dateStr,
+            (c) => c.dateStr === dateStr,
           ).length;
           currentDate = addDays(currentDate, 1);
         }
@@ -754,76 +640,70 @@ export function useAnalytics() {
         });
       }
 
-      // ---- PER-HABIT STATS (Based on last 30 days) ----
+      // ---- PER-HABIT STATS WITH CONSISTENCY METRIC ----
       const habitStats: HabitStatData[] = habits.map((habit) => {
         const habitCompletions = recentCompletions.filter(
           (c) => c.habit_id === habit.id,
-        ).length;
+        );
 
-        // Calculate rate based on days since habit was created (max 30)
         const createdDate = new Date(habit.created_at);
         const daysSinceCreated = Math.min(
           30,
-          Math.ceil(
-            (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24),
+          Math.max(
+            1,
+            Math.ceil(
+              (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24),
+            ),
           ),
         );
 
         const rate =
           daysSinceCreated > 0
-            ? Math.round((habitCompletions / daysSinceCreated) * 100)
+            ? Math.round((habitCompletions.length / daysSinceCreated) * 100)
             : 0;
+
+        // Calculate consistency stdDev and consistency score
+        const { stdDev, consistencyScore } = calculateHabitConsistency(
+          habitCompletions.map((c) => c.completed_at),
+          30,
+        );
 
         return {
           id: habit.id,
           name: habit.name,
           emoji: habit.emoji,
           rate: Math.min(100, rate),
-          completions: habitCompletions,
+          completions: habitCompletions.length,
+          stdDev: Math.round(stdDev * 100) / 100,
+          consistencyScore,
         };
       });
 
+      // ---- CROSS-HABIT CORRELATION ----
+      const correlations = calculateHabitCorrelations(
+        habits,
+        recentCompletions,
+        30,
+      );
+
       // ---- AGGREGATE STATS ----
       const totalCompletions = recentCompletions.length;
-
-      // Count unique days with at least one completion (last 30 days)
-      const uniqueDays = new Set(
-        recentCompletions.map((c) => c.completed_date),
-      );
+      const uniqueDays = new Set(recentCompletions.map((c) => c.dateStr));
       const totalDaysTracked = uniqueDays.size;
 
-      // Find best individual habit streak
+      // Best individual habit streak using unified streak utility
       let bestStreak = { days: 0, habitName: "-" };
-
       for (const habit of habits) {
-        const habitCompletionDates = new Set(
-          recentCompletions
-            .filter((c) => c.habit_id === habit.id)
-            .map((c) => c.completed_date),
-        );
+        const hCompletions = recentCompletions
+          .filter((c) => c.habit_id === habit.id)
+          .map((c) => c.completed_at);
 
-        let currentStreak = 0;
-        let maxStreak = 0;
-
-        for (let i = 0; i < 30; i++) {
-          const checkDate = new Date();
-          checkDate.setDate(checkDate.getDate() - i);
-          const dateStr = getDateString(checkDate);
-
-          if (habitCompletionDates.has(dateStr)) {
-            currentStreak++;
-            maxStreak = Math.max(maxStreak, currentStreak);
-          } else {
-            currentStreak = 0;
-          }
-        }
-
-        if (maxStreak > bestStreak.days) {
-          bestStreak = { days: maxStreak, habitName: habit.name };
+        const { best } = calculatePerHabitStreak(hCompletions);
+        if (best > bestStreak.days) {
+          bestStreak = { days: best, habitName: habit.name };
         }
       }
 
-      // Overall completion rate
       const overallRate =
         habitStats.length > 0
           ? Math.round(
@@ -837,6 +717,7 @@ export function useAnalytics() {
         last4WeeksTrend,
         monthlyTrend,
         habitStats,
+        correlations,
         totalDaysTracked,
         totalCompletions,
         bestStreak,

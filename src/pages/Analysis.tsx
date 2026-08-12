@@ -1,4 +1,4 @@
-import { Calendar, Target, TrendingUp, Loader2, Flame } from "lucide-react";
+import { Target, TrendingUp, Loader2, Flame, Layers } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/StatCard";
 import { ProgressRing } from "@/components/ProgressRing";
@@ -44,7 +44,7 @@ export default function Analysis() {
     last4WeeksTrend,
     monthlyTrend,
     habitStats,
-    totalDaysTracked,
+    correlations,
     totalCompletions,
     overallRate,
   } = analytics || {
@@ -52,12 +52,11 @@ export default function Analysis() {
     last4WeeksTrend: [],
     monthlyTrend: [],
     habitStats: [],
-    totalDaysTracked: 0,
+    correlations: [],
     totalCompletions: 0,
     overallRate: 0,
   };
 
-  // Use real streak stats from the dedicated hook
   const bestStreak = streakStats?.bestStreak || { days: 0, habitName: "-" };
   const currentStreak = streakStats?.currentStreak || {
     days: 0,
@@ -72,7 +71,7 @@ export default function Analysis() {
       <div>
         <h1 className="text-2xl font-bold lg:text-3xl">Analysis</h1>
         <p className="text-muted-foreground mt-1">
-          Track your progress and reflect on your consistency.
+          Objective performance metrics, variance analysis, and consistency tracking.
         </p>
       </div>
 
@@ -121,7 +120,7 @@ export default function Analysis() {
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Weekly Chart */}
-        <Card className="rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border-border/50">
+        <Card className="rounded-3xl shadow-sm border-border/50">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">This Week</CardTitle>
           </CardHeader>
@@ -170,7 +169,7 @@ export default function Analysis() {
         </Card>
 
         {/* Last 4 Weeks Trend */}
-        <Card className="rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border-border/50">
+        <Card className="rounded-3xl shadow-sm border-border/50">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">
               Last 4 Weeks Trend
@@ -237,7 +236,7 @@ export default function Analysis() {
       </div>
 
       {/* Monthly Trend Chart */}
-      <Card className="rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border-border/50">
+      <Card className="rounded-3xl shadow-sm border-border/50">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">Monthly Trend</CardTitle>
         </CardHeader>
@@ -291,14 +290,18 @@ export default function Analysis() {
         </CardContent>
       </Card>
 
-      {/* Per-Habit Stats */}
+      {/* Per-Habit Breakdown & Consistency Metrics */}
       <Card className="rounded-3xl shadow-sm border-border/50">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">
-              Habit Breakdown
-            </CardTitle>
-            {/* Legend for streak icons */}
+            <div>
+              <CardTitle className="text-lg font-semibold">
+                Habit Breakdown & Consistency
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Trailing 30-day rates and daily completion stability (standard deviation measure)
+              </p>
+            </div>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Flame className="h-3 w-3 text-orange-500" />
@@ -315,30 +318,45 @@ export default function Analysis() {
           {!hasData ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">
-                No habits yet. Add habits to see your breakdown.
+                No habits yet. Add habits to view consistency breakdown.
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {habitStats.map((habit, index) => {
+              {habitStats.map((habit) => {
                 const habitStreak = streakMap[habit.id];
                 return (
                   <div
                     key={habit.id}
-                    className="flex items-center gap-4 animate-slide-in rounded-2xl bg-card p-4 border border-border/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
-                    style={{ animationDelay: `${index * 50}ms` }}
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl bg-card p-4 border border-border/50 shadow-sm"
                   >
-                    <span className="text-xl">{habit.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {habit.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {habit.completions} completions (last 30 days)
-                      </p>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <span className="text-xl">{habit.emoji}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {habit.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {habit.completions} completions (last 30 days)
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Consistency measure */}
+                    <div
+                      className="flex flex-col text-left sm:text-right min-w-[120px]"
+                      title={`Standard deviation of daily completions over 30 days: ${habit.stdDev}`}
+                    >
+                      <span className="text-xs font-semibold text-foreground">
+                        Consistency: {habit.consistencyScore}%
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        Variance (σ): {habit.stdDev}
+                      </span>
+                    </div>
+
                     {/* Streak indicators */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-[90px]">
                       {habitStreak && (
                         <>
                           <div
@@ -362,10 +380,12 @@ export default function Analysis() {
                         </>
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
+
+                    {/* Rate Bar */}
+                    <div className="flex items-center gap-3 min-w-[140px]">
                       <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-success rounded-full transition-all duration-500"
+                          className="h-full bg-success rounded-full transition-all duration-300"
                           style={{ width: `${habit.rate}%` }}
                         />
                       </div>
@@ -380,6 +400,57 @@ export default function Analysis() {
           )}
         </CardContent>
       </Card>
+
+      {/* Cross-habit Same-day Correlation */}
+      {correlations.length > 0 && (
+        <Card className="rounded-3xl shadow-sm border-border/50">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle className="text-lg font-semibold">
+                  Habits That Tend to Happen Together
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Co-occurrence and lift analysis over the trailing 30 days
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {correlations.map((corr) => (
+                <div
+                  key={`${corr.habitAId}-${corr.habitBId}`}
+                  className="rounded-2xl border border-border/50 bg-card p-4 space-y-2"
+                >
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {corr.habitAName} + {corr.habitBName}
+                  </p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Joint completions:</span>
+                    <span className="font-medium text-foreground">
+                      {corr.coOccurrenceCount} days
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Co-occurrence rate:</span>
+                    <span className="font-medium text-foreground">
+                      {corr.togetherRate}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Co-occurrence Lift:</span>
+                    <span className="font-semibold text-primary">
+                      {corr.lift}x baseline
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
