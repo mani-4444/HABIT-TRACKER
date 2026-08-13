@@ -49,6 +49,9 @@ function computeStreak(dates: string[]): number {
   return streak;
 }
 
+// ── Cache TTL ─────────────────────────────────────────────────────────────────
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
 // ── Handler ──────────────────────────────────────────────────────────────────
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -90,6 +93,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (authError || !user) {
     return res.status(401).json({ error: "Invalid or expired token" });
+  }
+
+  // ── Cache check ────────────────────────────────────────────────────────────
+  // Return cached insights if generated within the last 6 hours (cost control).
+  try {
+    const { data: cached } = await supabase
+      .from("ai_insights_cache")
+      .select("insights, generated_at")
+      .eq("user_id", user.id)
+      .single();
+
+    if (cached) {
+      const age = Date.now() - new Date(cached.generated_at).getTime();
+      if (age < CACHE_TTL_MS) {
+        return res.status(200).json(cached.insights as AIInsightsResponse);
+      }
+    }
+  } catch {
+    // Cache table may not exist yet (migration not run); proceed to Groq.
   }
 
   try {
@@ -189,15 +211,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: "AI service not configured" });
     }
 
-    const systemPrompt = `You are a helpful habit-tracking coach. Analyze the user's habit data summary and return actionable insights. Always respond with ONLY valid JSON in this exact structure:
-{
-  "summary": "A 2-3 sentence overview of the user's habit performance",
-  "strengths": ["strength1", "strength2", "strength3"],
-  "weaknesses": ["weakness1", "weakness2"],
-  "suggestions": ["suggestion1", "suggestion2", "suggestion3"],
-  "motivation": "A short motivational message tailored to their progress"
-}
-Do NOT include any text outside the JSON. Do NOT wrap in markdown code blocks.`;
+    const systemPrompt = `You are a helpful habit-tracking coach. Analyze the user's habit data summary and return actionable insights. Always respond with ONLY valid JSON in this exact structure:\n{\n  "summary": "A 2-3 sentence overview of the user's habit performance",\n  "strengths": ["strength1", "strength2", "strength3"],\n  "weaknesses": ["weakness1", "weakness2"],\n  "suggestions": ["suggestion1", "suggestion2", "suggestion3"],\n  "motivation": "A short motivational message tailored to their progress"\n}\nDo NOT include any text outside the JSON. Do NOT wrap in markdown code blocks.`;
 
     const userPrompt = `Here is my habit tracking data for the ${summaryPayload.period}:\n\n${JSON.stringify(summaryPayload, null, 2)}\n\nPlease analyze this and provide insights.`;
 
@@ -252,6 +266,21 @@ Do NOT include any text outside the JSON. Do NOT wrap in markdown code blocks.`;
       !insights.motivation
     ) {
       return res.status(502).json({ error: "Malformed AI response" });
+    }
+
+    // ── Persist to cache ───────────────────────────────────────────────────
+    // Best-effort: a cache write failure must never block the response.
+    try {
+      await supabase.from("ai_insights_cache").upsert(
+        {
+          user_id: user.id,
+          insights,
+          generated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
+    } catch (cacheErr) {
+      console.error("AI insights cache write failed (non-fatal):", cacheErr);
     }
 
     return res.status(200).json(insights);

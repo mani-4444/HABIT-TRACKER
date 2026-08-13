@@ -5,6 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   useHabits,
   useAddHabit,
   useUpdateHabit,
@@ -63,6 +73,7 @@ export default function ManageHabits() {
   const [selectedEmoji, setSelectedEmoji] = useState("⭐");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
 
   const addHabit = () => {
     if (!newHabit.trim()) return;
@@ -78,8 +89,11 @@ export default function ManageHabits() {
     );
   };
 
-  const deleteHabit = (id: string) => {
-    deleteHabitMutation.mutate(id);
+  const confirmDeleteHabit = () => {
+    if (!habitToDelete) return;
+    deleteHabitMutation.mutate(habitToDelete, {
+      onSettled: () => setHabitToDelete(null),
+    });
   };
 
   const startEdit = (habit: { id: string; name: string }) => {
@@ -263,7 +277,7 @@ export default function ManageHabits() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteHabit(habit.id)}
+                          onClick={() => setHabitToDelete(habit.id)}
                           className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive"
                           disabled={deleteHabitMutation.isPending}
                         >
@@ -278,6 +292,40 @@ export default function ManageHabits() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Habit Confirmation Dialog */}
+      <AlertDialog
+        open={habitToDelete !== null}
+        onOpenChange={(open) => { if (!open) setHabitToDelete(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this habit?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the habit and{" "}
+              <strong>all of its completion history</strong>. Your streaks and
+              past records for this habit cannot be recovered. This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteHabitMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteHabit}
+              disabled={deleteHabitMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteHabitMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Delete permanently"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
