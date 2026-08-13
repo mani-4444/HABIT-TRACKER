@@ -206,10 +206,14 @@ export function useToggleCompletion() {
 
         if (error) throw error;
       } else {
-        // Insert a new completion with TIMESTAMPTZ
+        const now = new Date();
+        const todayDateStr = format(now, "yyyy-MM-dd");
+
+        // Insert a new completion with TIMESTAMPTZ and legacy completed_date for database backward compatibility
         const { error } = await supabase.from("habit_completions").insert({
           habit_id: habitId,
-          completed_at: new Date().toISOString(),
+          completed_at: now.toISOString(),
+          completed_date: todayDateStr,
         });
 
         if (error) throw error;
