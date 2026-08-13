@@ -5,6 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   useDailyTodos,
   useAddDailyTodo,
   useToggleDailyTodo,
@@ -14,6 +24,7 @@ import {
 
 export default function DailyTodos() {
   const [newTask, setNewTask] = useState("");
+  const [todoToDelete, setTodoToDelete] = useState<string | null>(null);
   const today = getTodayDateString();
 
   const { data: todos, isLoading, isError, error } = useDailyTodos(today);
@@ -41,8 +52,12 @@ export default function DailyTodos() {
     });
   };
 
-  const handleDelete = (id: string) => {
-    deleteTodo.mutate({ id, task_date: today });
+  const confirmDeleteTodo = () => {
+    if (!todoToDelete) return;
+    deleteTodo.mutate(
+      { id: todoToDelete, task_date: today },
+      { onSettled: () => setTodoToDelete(null) },
+    );
   };
 
   // Loading state
@@ -154,7 +169,7 @@ export default function DailyTodos() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDelete(todo.id)}
+                    onClick={() => setTodoToDelete(todo.id)}
                     disabled={deleteTodo.isPending}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -177,6 +192,38 @@ export default function DailyTodos() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Todo Confirmation Dialog */}
+      <AlertDialog
+        open={todoToDelete !== null}
+        onOpenChange={(open) => { if (!open) setTodoToDelete(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this task?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This task will be permanently removed. This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteTodo.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteTodo}
+              disabled={deleteTodo.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteTodo.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
