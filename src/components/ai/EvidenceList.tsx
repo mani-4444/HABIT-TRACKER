@@ -33,7 +33,7 @@ export const EvidenceList: React.FC<EvidenceListProps> = ({ evidence }) => {
       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         Supporting Evidence
       </p>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
         {evidence.map((item, idx) => (
           <div
             key={idx}
