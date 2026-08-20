@@ -80,9 +80,22 @@ export default function AIInsightsPage() {
         }),
       });
 
-      const json = await res.json();
+      const raw = await res.text();
+      let json: AskHabitsResponse;
+      try {
+        json = JSON.parse(raw);
+      } catch {
+        if (!res.ok) {
+          throw new Error(`AI request error (${res.status}): ${raw.slice(0, 120)}`);
+        }
+        throw new Error("Failed to parse AI response.");
+      }
+
       if (!res.ok) {
-        throw new Error(json.error || "Failed to answer question.");
+        const errorMsg = typeof json === "object" && json && "error" in (json as unknown as { error: string })
+          ? (json as unknown as { error: string }).error
+          : `API error (${res.status})`;
+        throw new Error(errorMsg);
       }
 
       setAskResult(json);
@@ -114,9 +127,22 @@ export default function AIInsightsPage() {
         }),
       });
 
-      const json = await res.json();
+      const raw = await res.text();
+      let json: WeeklyReview;
+      try {
+        json = JSON.parse(raw);
+      } catch {
+        if (!res.ok) {
+          throw new Error(`AI request error (${res.status}): ${raw.slice(0, 120)}`);
+        }
+        throw new Error("Failed to parse Weekly Review response.");
+      }
+
       if (!res.ok) {
-        throw new Error(json.error || "Failed to load Weekly Review.");
+        const errorMsg = typeof json === "object" && json && "error" in (json as unknown as { error: string })
+          ? (json as unknown as { error: string }).error
+          : `API error (${res.status})`;
+        throw new Error(errorMsg);
       }
 
       setWeeklyReview(json);

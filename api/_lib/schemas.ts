@@ -92,12 +92,18 @@ export type AIInsightsResponse = z.infer<typeof AIInsightsResponseSchema>;
 
 // ── Weekly Review Schema ──────────────────────────────────────────────────────
 
+const ensureStringArray = z.preprocess((val) => {
+  if (typeof val === "string") return [val];
+  if (Array.isArray(val)) return val.map((v) => String(v));
+  return [];
+}, z.array(z.string()).default([]));
+
 export const WeeklyReviewSchema = z.object({
   headline: z.string().default("Weekly Habit Summary"),
-  wins: z.array(z.string()).default([]),
-  changes: z.array(z.string()).default([]),
+  wins: ensureStringArray,
+  changes: ensureStringArray,
   focusArea: z.string().default("Consistency"),
-  nextWeekPlan: z.array(z.string()).default([]),
+  nextWeekPlan: ensureStringArray,
   experiment: z.string().default("Track at least one key habit daily for 7 days."),
 });
 
