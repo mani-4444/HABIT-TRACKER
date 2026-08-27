@@ -210,16 +210,12 @@ export function calculateHabitHealth(
       trend = "no_activity";
       trendLabel = "No data yet";
       trendIcon = "—";
-    } else if (completedCount === 1) {
-      // Single completion on new habit is insufficient evidence of a trend
+    } else {
+      // Activity in a new habit (1, 2, or 3 completions) shows engagement,
+      // but lacks sufficient comparison history over time to infer an improving trend.
       trend = "stable";
       trendLabel = "—";
       trendIcon = "—";
-    } else {
-      // Multiple completions on new habit indicate initial positive momentum
-      trend = "improving";
-      trendLabel = "↗ Improving";
-      trendIcon = "↗";
     }
   } else if (completedCount === 0) {
     trend = "no_activity";

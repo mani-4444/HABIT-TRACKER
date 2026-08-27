@@ -168,7 +168,7 @@ describe("Habit Health Intelligence System", () => {
       expect(health.completed14Count).toBe(2);
       expect(health.consistencyRate14).toBe(100);
       expect(health.history14Days.length).toBe(2);
-      expect(health.trendLabel).toBe("↗ Improving");
+      expect(health.trendLabel).toBe("—");
       expect(health.explanation).toContain("This habit is new");
     });
   });
@@ -584,7 +584,7 @@ describe("Habit Health Intelligence System", () => {
       );
     });
 
-    it("New habit, partial history: 2/2 days -> actual 2/2 tracking window (never 2/14)", () => {
+    it("New habit, partial history: 2/2 days -> actual 2/2 tracking window and neutral '—' trend", () => {
       const createdYesterday = format(subDays(refDate, 1), "yyyy-MM-dd");
       const completions = [0, 1].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
       const health = calculateHabitHealth("new-2", completions, createdYesterday, refDate);
@@ -593,7 +593,24 @@ describe("Habit Health Intelligence System", () => {
       expect(health.totalDays).toBe(2);
       expect(health.completed14Count).toBe(2);
       expect(health.history14Days.length).toBe(2);
-      expect(health.trendLabel).toBe("↗ Improving");
+      expect(health.trendLabel).toBe("—");
+      expect(health.trend).not.toBe("improving");
+      expect(health.trend).not.toBe("declining");
+    });
+
+    it("New habit: 3/3 days -> actual 3/3 tracking window and neutral '—' trend (NOT Improving)", () => {
+      const created3DaysAgo = format(subDays(refDate, 2), "yyyy-MM-dd");
+      const completions = [0, 1, 2].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("new-3", completions, created3DaysAgo, refDate);
+
+      expect(health.health).toBe("new");
+      expect(health.totalDays).toBe(3);
+      expect(health.completed14Count).toBe(3);
+      expect(health.history14Days.length).toBe(3);
+      expect(health.trendLabel).toBe("—");
+      expect(health.trend).not.toBe("improving");
+      expect(health.trend).not.toBe("declining");
+      expect(health.trend).not.toBe("no_activity");
     });
 
     it("Dashboard math with New habit: Strong(2) + OnTrack(3) + AtRisk(2) + Ignored(1) + New(1) = Total(9)", () => {
