@@ -221,7 +221,8 @@ export function calculateHabitHealth(
     trend = "improving";
     trendLabel = "↗ Improving";
     trendIcon = "↗";
-  } else if (recent7Count > earlier7Count + 1) {
+  } else if (recent7Count > earlier7Count) {
+    // More activity recently than in earlier period
     trend = "improving";
     trendLabel = "↗ Improving";
     trendIcon = "↗";
@@ -284,14 +285,14 @@ export function calculateHabitHealth(
     explanation = `Your historical consistency is strong, but you've missed this habit for the last ${daysSinceLast} days.`;
   }
   // 4. Ignored:
-  // - 0 completions in 14 days
-  // - OR below 30% consistency without active recovery
-  // - OR no activity for 7+ days (unless historically strong decline caught above)
-  // RULE: Ignored habits with no meaningful recent activity must ALWAYS show "— No activity", never "→ Stable"!
+  // STRICT RULE: Ignored is ONLY for habits with genuine lack of meaningful recent activity:
+  // - 0 completions in the tracked 14-day period
+  // - OR no activity for 7+ days (unless historically strong habit experiencing recent decline)
+  // Any habit with completions within the last 6 days (daysSinceLast < 7) is an ACTIVE habit and NEVER Ignored!
   else if (
     completed14Count === 0 ||
-    (consistencyRate < 30 && trend !== "improving") ||
-    (daysSinceLast >= 7 && earlier7Count < 4)
+    (daysSinceLast >= 7 && earlier7Count < 4) ||
+    daysSinceLast >= 14
   ) {
     health = "ignored";
     trend = "no_activity";
@@ -299,10 +300,8 @@ export function calculateHabitHealth(
     trendIcon = "—";
     if (completed14Count === 0) {
       explanation = "No completions during the tracked 14-day period.";
-    } else if (daysSinceLast >= 7) {
-      explanation = `No recent activity in the last ${daysSinceLast} days. Overall consistency is low.`;
     } else {
-      explanation = `Low consistency with ${completed14Count}/${totalDays} days completed (${consistencyRate}%). Insufficient recent activity to establish a trend.`;
+      explanation = `No recent activity in the last ${daysSinceLast} days. Overall consistency is low.`;
     }
   }
   // 5. Strong: >= 80% consistency, good recent activity (within 2 days), no meaningful decline
@@ -316,21 +315,27 @@ export function calculateHabitHealth(
     explanation = `Steady consistency with ${completed14Count}/14 days completed (${consistencyRate}%). Maintaining a solid routine.`;
   }
   // 7. At Risk:
-  // - 30-59% consistency
+  // - < 60% consistency with recent activity (daysSinceLast < 7)
   // - OR declining trend
   // - OR missed 3-6 days consecutively
   // - OR active improving trend with low baseline
   else if (
-    (consistencyRate >= 30 && consistencyRate < 60) ||
+    consistencyRate < 60 ||
     trend === "declining" ||
     (daysSinceLast >= 3 && daysSinceLast < 7) ||
     trend === "improving"
   ) {
     health = "at_risk";
-    if (trend === "declining") {
+    if (trend === "improving") {
+      explanation = "Your overall consistency is still low, but your recent activity is improving.";
+    } else if (trend === "declining") {
       explanation = `Your consistency has dropped recently. ${comparisonText}`;
     } else if (daysSinceLast >= 3) {
       explanation = `Missed for ${daysSinceLast} consecutive days. Check in today to preserve your momentum.`;
+    } else if (daysSinceLast === 0) {
+      explanation = `Completed today. Consistency is at ${consistencyRate}%. Keep up today's momentum to build consistency.`;
+    } else if (daysSinceLast === 1) {
+      explanation = `Completed yesterday. Consistency is at ${consistencyRate}%. Keep going to stay on track.`;
     } else {
       explanation = `Consistency is at ${consistencyRate}%. Needs attention to stay on track.`;
     }

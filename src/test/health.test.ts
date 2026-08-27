@@ -328,5 +328,80 @@ describe("Habit Health Intelligence System", () => {
       expect(summary.bannerMessage.headline).toBe("✨ Your habits are looking strong today.");
     });
   });
+
+  describe("Targeted Logic Audit: Tests 1 through 6 (Recency vs Consistency)", () => {
+    it("Test 1 — Completed today: 3/14 days + completed today MUST NOT return Ignored + No activity", () => {
+      // Completed today (day 0), and two older days (e.g. days 3, 10)
+      const completions = [0, 3, 10].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("test-1-today", completions, "2026-01-01", refDate);
+
+      expect(health.health).toBe("at_risk");
+      expect(health.health).not.toBe("ignored");
+      expect(health.trend).not.toBe("no_activity");
+      expect(health.trendLabel).not.toBe("— No activity");
+      expect(health.lastCompletedText).toBe("Completed today");
+      expect(health.daysSinceLastCompletion).toBe(0);
+      expect(health.explanation).not.toContain("No recent activity");
+      expect(health.explanation).not.toContain("No completions during the tracked");
+    });
+
+    it("Test 2 — Completed yesterday: 3/14 days + completed yesterday MUST NOT return No activity", () => {
+      // Completed yesterday (day 1), and two older days (e.g. days 4, 10)
+      const completions = [1, 4, 10].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("test-2-yesterday", completions, "2026-01-01", refDate);
+
+      expect(health.health).toBe("at_risk");
+      expect(health.health).not.toBe("ignored");
+      expect(health.trend).not.toBe("no_activity");
+      expect(health.trendLabel).not.toBe("— No activity");
+      expect(health.lastCompletedText).toBe("Yesterday");
+      expect(health.daysSinceLastCompletion).toBe(1);
+    });
+
+    it("Test 3 — Zero activity: 0/14 days returns Ignored + No activity", () => {
+      const health = calculateHabitHealth("test-3-zero", [], "2026-01-01", refDate);
+
+      expect(health.health).toBe("ignored");
+      expect(health.trend).toBe("no_activity");
+      expect(health.trendLabel).toBe("— No activity");
+      expect(health.completed14Count).toBe(0);
+      expect(health.explanation).toContain("No completions during the tracked");
+    });
+
+    it("Test 4 — Low consistency but recent activity: 3/14 days + recent completions -> At Risk", () => {
+      // 3 completions within recent 5 days
+      const completions = [0, 2, 4].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("test-4-recent", completions, "2026-01-01", refDate);
+
+      expect(health.health).toBe("at_risk");
+      expect(health.health).not.toBe("ignored");
+      expect(health.trend).toBe("improving");
+      expect(health.trendLabel).toBe("↗ Improving");
+      expect(health.completed14Count).toBe(3);
+    });
+
+    it("Test 5 — Historically strong but recently inactive: high historical + several recent missed days -> At Risk + Declining", () => {
+      // Completed 7 days in earlier period (days 13..7), missed the last 7 days (days 6..0)
+      const completions = [7, 8, 9, 10, 11, 12, 13].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("test-5-declining", completions, "2026-01-01", refDate);
+
+      expect(health.health).toBe("at_risk");
+      expect(health.trend).toBe("declining");
+      expect(health.trendLabel).toBe("↘ Declining");
+      expect(health.daysSinceLastCompletion).toBe(7);
+      expect(health.explanation).toContain("historical consistency is strong");
+    });
+
+    it("Test 6 — Recovery: low historical consistency + strong recent activity -> At Risk + Improving", () => {
+      // Completed 3 of the last 4 days (days 0, 1, 2)
+      const completions = [0, 1, 2].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("test-6-recovery", completions, "2026-01-01", refDate);
+
+      expect(health.health).toBe("at_risk");
+      expect(health.trend).toBe("improving");
+      expect(health.trendLabel).toBe("↗ Improving");
+      expect(health.explanation).toContain("improving");
+    });
+  });
 });
 
