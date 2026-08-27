@@ -58,9 +58,14 @@ export function HabitCheckbox({
       dotColor: "bg-rose-500",
       badgeStyle: "bg-rose-500/10 text-rose-400 border-rose-500/25 hover:border-rose-500/40",
     },
+    new: {
+      label: "New habit",
+      dotColor: "bg-zinc-400",
+      badgeStyle: "bg-zinc-500/10 text-zinc-300 border-zinc-500/25 hover:border-zinc-500/40",
+    },
   };
 
-  const badgeInfo = healthBadgeConfig[health];
+  const badgeInfo = healthBadgeConfig[health] || healthBadgeConfig.new;
 
   return (
     <div
@@ -154,6 +159,15 @@ export function HabitCheckbox({
                         {completedCount}/{totalDays} days · {consistencyRate}% consistency
                       </span>
                     </div>
+
+                    {totalDays < 7 && (
+                      <div className="flex items-center justify-between text-[11px] text-neutral-400">
+                        <span>Tracking period:</span>
+                        <span className="font-medium text-neutral-200">
+                          {totalDays} {totalDays === 1 ? "day" : "days"}
+                        </span>
+                      </div>
+                    )}
 
                     {totalDays >= 7 && (
                       <div className="flex items-center justify-between text-[11px] text-neutral-400">

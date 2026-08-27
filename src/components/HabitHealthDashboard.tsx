@@ -43,6 +43,7 @@ export function HabitHealthDashboard({
     onTrackCount,
     atRiskCount,
     ignoredCount,
+    newCount = 0,
     attentionCount,
     doingWellHabits = [],
     needsAttentionHabits = [],
@@ -139,6 +140,23 @@ export function HabitHealthDashboard({
                 <span className="h-2 w-2 rounded-full bg-rose-500" />
                 <span>{ignoredCount} Ignored</span>
               </button>
+
+              {newCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onFilterChange(activeFilter === "new" ? "all" : "new")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all duration-150 text-xs font-semibold select-none cursor-pointer",
+                    activeFilter === "new"
+                      ? "bg-zinc-500/20 text-zinc-300 border-zinc-500/40 ring-1 ring-zinc-500/40"
+                      : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20 hover:bg-zinc-500/15",
+                  )}
+                  title="Filter by New habits"
+                >
+                  <span className="h-2 w-2 rounded-full bg-zinc-400" />
+                  <span>{newCount} New</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -401,6 +419,22 @@ export function HabitHealthDashboard({
             <span className="h-2 w-2 rounded-full bg-rose-400" />
             <span>Ignored ({ignoredCount})</span>
           </button>
+
+          {newCount > 0 && (
+            <button
+              type="button"
+              onClick={() => onFilterChange("new")}
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 inline-flex items-center gap-1.5 select-none cursor-pointer",
+                activeFilter === "new"
+                  ? "bg-zinc-600 text-white font-semibold shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+              )}
+            >
+              <span className="h-2 w-2 rounded-full bg-zinc-400" />
+              <span>New ({newCount})</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

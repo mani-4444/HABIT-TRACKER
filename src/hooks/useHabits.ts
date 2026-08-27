@@ -883,6 +883,7 @@ export function useHabitHealthDashboard() {
             onTrackCount: 0,
             atRiskCount: 0,
             ignoredCount: 0,
+            newCount: 0,
             totalHabitsCount: 0,
             attentionCount: 0,
             doingWellHabits: [],

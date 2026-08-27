@@ -1,7 +1,7 @@
 import { format, subDays, differenceInCalendarDays } from "date-fns";
 import { normalizeDateString } from "./streaks";
 
-export type HabitHealthCategory = "strong" | "on_track" | "at_risk" | "ignored";
+export type HabitHealthCategory = "strong" | "on_track" | "at_risk" | "ignored" | "new";
 export type HabitTrend = "improving" | "stable" | "declining" | "no_activity";
 
 export interface DayHistoryItem {
@@ -39,8 +39,9 @@ export interface HealthDashboardSummary {
   onTrackCount: number;
   atRiskCount: number;
   ignoredCount: number;
+  newCount: number;
   totalHabitsCount: number;
-  attentionCount: number; // At Risk + Ignored
+  attentionCount: number; // At Risk + Ignored (never includes new)
   doingWellHabits: {
     id: string;
     name: string;
@@ -208,10 +209,16 @@ export function calculateHabitHealth(
     if (sortedDates.length === 0) {
       trend = "no_activity";
       trendLabel = "No data yet";
-      trendIcon = "○";
+      trendIcon = "—";
+    } else if (completedCount === 1) {
+      // Single completion on new habit is insufficient evidence of a trend
+      trend = "stable";
+      trendLabel = "—";
+      trendIcon = "—";
     } else {
+      // Multiple completions on new habit indicate initial positive momentum
       trend = "improving";
-      trendLabel = "New habit";
+      trendLabel = "↗ Improving";
       trendIcon = "↗";
     }
   } else if (completedCount === 0) {
@@ -280,15 +287,10 @@ export function calculateHabitHealth(
   let health: HabitHealthCategory = "on_track";
   let explanation = "";
 
-  // 1. Edge Case: New Habits (<= 3 days old)
+  // 1. Neutral State: New Habits (<= 3 days old, insufficient history to judge consistency)
   if (isNewHabit) {
-    if (sortedDates.length === 0) {
-      health = "on_track";
-      explanation = "Newly added habit. Complete it today to begin building momentum.";
-    } else {
-      health = "strong";
-      explanation = `Great start! You've completed ${completedCount}/${totalDays} days on your new habit.`;
-    }
+    health = "new";
+    explanation = "This habit is new, so there isn't enough history yet to evaluate long-term consistency.";
   }
   // 2. Recovery Override: Low overall baseline (< 60%), but clear recent recovery
   else if (
@@ -371,7 +373,10 @@ export function calculateHabitHealth(
     explanation = `Consistency is at ${consistencyRate}%. Needs attention to stay on track.`;
   }
 
-  const categoryMeta = {
+  const categoryMeta: Record<
+    HabitHealthCategory,
+    { label: string; color: string }
+  > = {
     strong: {
       label: "Strong",
       color: "text-emerald-500",
@@ -387,6 +392,10 @@ export function calculateHabitHealth(
     ignored: {
       label: "Ignored",
       color: "text-rose-500",
+    },
+    new: {
+      label: "New habit",
+      color: "text-zinc-400",
     },
   };
 
@@ -425,6 +434,7 @@ export function buildHealthDashboardSummary(
   let onTrackCount = 0;
   let atRiskCount = 0;
   let ignoredCount = 0;
+  let newCount = 0;
 
   let atRiskDecliningCount = 0;
   let atRiskStableCount = 0;
@@ -455,10 +465,12 @@ export function buildHealthDashboardSummary(
       }
     } else if (detail.health === "ignored") {
       ignoredCount++;
+    } else if (detail.health === "new") {
+      newCount++;
     }
 
-    // 1. Doing Well: Strong habits or high consistency (>= 10/14 or >= 75%)
-    if (detail.health === "strong" || detail.consistencyRate14 >= 75) {
+    // 1. Doing Well: Strong habits or established habits with high consistency (>= 75%)
+    if (detail.health === "strong" || (detail.health !== "new" && detail.consistencyRate14 >= 75)) {
       doingWellHabits.push({
         id: habit.id,
         name: habit.name,
@@ -470,7 +482,7 @@ export function buildHealthDashboardSummary(
       });
     }
 
-    // 2. Needs Attention: Prioritized according to urgency:
+    // 2. Needs Attention: Prioritized according to urgency (new habits strictly excluded):
     // 1. Ignored + no recent activity (priorityScore: 500)
     // 2. At Risk + declining (priorityScore: 400)
     // 3. Low consistency (< 30%) (priorityScore: 300)
@@ -478,7 +490,7 @@ export function buildHealthDashboardSummary(
     // 5. At Risk + improving (priorityScore: 100)
     if (detail.health === "ignored" || detail.health === "at_risk") {
       let priorityScore = 150;
-      let urgencyLabel = "At Risk";
+      let urgencyLabel = "Needs attention";
 
       if (detail.health === "ignored") {
         priorityScore = 500;
@@ -486,7 +498,7 @@ export function buildHealthDashboardSummary(
       } else if (detail.health === "at_risk" && detail.trend === "declining") {
         priorityScore = 400;
         urgencyLabel = "↘ Declining";
-      } else if (detail.consistencyRate14 < 30) {
+      } else if (detail.consistencyRate14 < 30 && detail.trend !== "improving") {
         priorityScore = 300;
         urgencyLabel = "Low consistency";
       } else if (detail.health === "at_risk" && detail.trend === "stable") {
@@ -514,8 +526,8 @@ export function buildHealthDashboardSummary(
       });
     }
 
-    // 3. Recent Decline: Declining trend with previous activity
-    if (detail.trend === "declining") {
+    // 3. Recent Decline: Declining trend with previous activity (new habits excluded)
+    if (detail.trend === "declining" && detail.health !== "new") {
       decliningHabits.push({
         id: habit.id,
         name: habit.name,
@@ -530,8 +542,8 @@ export function buildHealthDashboardSummary(
       });
     }
 
-    // 4. Improving: Habits on an upward trend
-    if (detail.trend === "improving") {
+    // 4. Improving: Habits on an upward trend (new habits excluded from established improving)
+    if (detail.trend === "improving" && detail.health !== "new") {
       improvingHabits.push({
         id: habit.id,
         name: habit.name,
@@ -558,7 +570,7 @@ export function buildHealthDashboardSummary(
   decliningHabits.sort((a, b) => b.daysSinceLast - a.daysSinceLast);
   improvingHabits.sort((a, b) => b.recent4Count - a.recent4Count);
 
-  // Dynamic Headline Banner (Requiring Attention = At Risk + Ignored)
+  // Dynamic Headline Banner (Requiring Attention = At Risk + Ignored, NEVER New)
   const totalHabitsCount = habits.length;
   const attentionCount = atRiskCount + ignoredCount;
 
@@ -614,6 +626,7 @@ export function buildHealthDashboardSummary(
     onTrackCount,
     atRiskCount,
     ignoredCount,
+    newCount,
     totalHabitsCount,
     attentionCount,
     doingWellHabits,
@@ -623,4 +636,3 @@ export function buildHealthDashboardSummary(
     bannerMessage,
   };
 }
-

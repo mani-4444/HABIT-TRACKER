@@ -142,8 +142,9 @@ describe("Habit Health Intelligence System", () => {
         refDate,
       );
 
-      expect(health.health).toBe("on_track");
+      expect(health.health).toBe("new");
       expect(health.health).not.toBe("ignored");
+      expect(health.health).not.toBe("on_track");
       expect(health.trendLabel).toBe("No data yet");
       expect(health.totalDays).toBe(1);
     });
@@ -162,12 +163,13 @@ describe("Habit Health Intelligence System", () => {
         refDate,
       );
 
-      expect(health.health).toBe("strong");
+      expect(health.health).toBe("new");
       expect(health.totalDays).toBe(2);
       expect(health.completed14Count).toBe(2);
       expect(health.consistencyRate14).toBe(100);
       expect(health.history14Days.length).toBe(2);
-      expect(health.trendLabel).toBe("New habit");
+      expect(health.trendLabel).toBe("↗ Improving");
+      expect(health.explanation).toContain("This habit is new");
     });
   });
 
@@ -409,7 +411,7 @@ describe("Habit Health Intelligence System", () => {
       const futureDate = format(subDays(refDate, -5), "yyyy-MM-dd"); // 5 days in future
       const health = calculateHabitHealth("future-habit", [], futureDate, refDate);
 
-      expect(health.health).toBe("on_track");
+      expect(health.health).toBe("new");
       expect(health.trendLabel).toBe("No data yet");
       expect(health.totalDays).toBe(1);
       expect(health.consistencyRate14).toBe(0);
@@ -546,6 +548,112 @@ describe("Habit Health Intelligence System", () => {
           expect(health.explanation).not.toContain("No recent activity");
         }
       }
+    });
+  });
+
+  describe("Section 12: Neutral New / Insufficient Data State Tests", () => {
+    it("New habit, no completion: Created today, 0 completions -> New / Insufficient Data", () => {
+      const todayStr = format(refDate, "yyyy-MM-dd");
+      const health = calculateHabitHealth("new-0", [], todayStr, refDate);
+
+      expect(health.health).toBe("new");
+      expect(health.trendLabel).toBe("No data yet");
+      expect(health.healthLabel).toBe("New habit");
+      expect(health.totalDays).toBe(1);
+      expect(health.completed14Count).toBe(0);
+      expect(health.consistencyRate14).toBe(0);
+      expect(health.explanation).toBe(
+        "This habit is new, so there isn't enough history yet to evaluate long-term consistency.",
+      );
+    });
+
+    it("New habit, completed today: Created today, 1 completion -> New / Insufficient Data (NOT Strong)", () => {
+      const todayStr = format(refDate, "yyyy-MM-dd");
+      const health = calculateHabitHealth("new-1", [todayStr], todayStr, refDate);
+
+      expect(health.health).toBe("new");
+      expect(health.health).not.toBe("strong");
+      expect(health.health).not.toBe("on_track");
+      expect(health.totalDays).toBe(1);
+      expect(health.completed14Count).toBe(1);
+      expect(health.consistencyRate14).toBe(100);
+      expect(health.trendLabel).toBe("—");
+      expect(health.lastCompletedText).toBe("Completed today");
+      expect(health.explanation).toBe(
+        "This habit is new, so there isn't enough history yet to evaluate long-term consistency.",
+      );
+    });
+
+    it("New habit, partial history: 2/2 days -> actual 2/2 tracking window (never 2/14)", () => {
+      const createdYesterday = format(subDays(refDate, 1), "yyyy-MM-dd");
+      const completions = [0, 1].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("new-2", completions, createdYesterday, refDate);
+
+      expect(health.health).toBe("new");
+      expect(health.totalDays).toBe(2);
+      expect(health.completed14Count).toBe(2);
+      expect(health.history14Days.length).toBe(2);
+      expect(health.trendLabel).toBe("↗ Improving");
+    });
+
+    it("Dashboard math with New habit: Strong(2) + OnTrack(3) + AtRisk(2) + Ignored(1) + New(1) = Total(9)", () => {
+      const habits = [
+        { id: "s1", name: "Strong 1", emoji: "🟢" },
+        { id: "s2", name: "Strong 2", emoji: "🟢" },
+        { id: "t1", name: "On Track 1", emoji: "🔵" },
+        { id: "t2", name: "On Track 2", emoji: "🔵" },
+        { id: "t3", name: "On Track 3", emoji: "🔵" },
+        { id: "r1", name: "At Risk 1", emoji: "🟠" },
+        { id: "r2", name: "At Risk 2", emoji: "🟠" },
+        { id: "i1", name: "Ignored 1", emoji: "🔴" },
+        { id: "n1", name: "New 1", emoji: "⚪" },
+      ];
+
+      const full14 = Array.from({ length: 14 }, (_, i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const todayStr = format(refDate, "yyyy-MM-dd");
+
+      const healthMap: Record<string, HabitHealthDetail> = {
+        s1: calculateHabitHealth("s1", full14, "2026-01-01", refDate),
+        s2: calculateHabitHealth("s2", full14, "2026-01-01", refDate),
+        t1: calculateHabitHealth("t1", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => format(subDays(refDate, i), "yyyy-MM-dd")), "2026-01-01", refDate),
+        t2: calculateHabitHealth("t2", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => format(subDays(refDate, i), "yyyy-MM-dd")), "2026-01-01", refDate),
+        t3: calculateHabitHealth("t3", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => format(subDays(refDate, i), "yyyy-MM-dd")), "2026-01-01", refDate),
+        r1: calculateHabitHealth("r1", [0, 3, 7, 10].map((i) => format(subDays(refDate, i), "yyyy-MM-dd")), "2026-01-01", refDate),
+        r2: calculateHabitHealth("r2", [0, 4, 8, 11].map((i) => format(subDays(refDate, i), "yyyy-MM-dd")), "2026-01-01", refDate),
+        i1: calculateHabitHealth("i1", [], "2026-01-01", refDate),
+        n1: calculateHabitHealth("n1", [], todayStr, refDate), // New habit created today
+      };
+
+      const summary = buildHealthDashboardSummary(habits, healthMap);
+
+      expect(summary.strongCount).toBe(2);
+      expect(summary.onTrackCount).toBe(3);
+      expect(summary.atRiskCount).toBe(2);
+      expect(summary.ignoredCount).toBe(1);
+      expect(summary.newCount).toBe(1);
+      expect(summary.totalHabitsCount).toBe(9);
+
+      // Invariant: Strong + On Track + At Risk + Ignored + New = Total
+      expect(
+        summary.strongCount +
+          summary.onTrackCount +
+          summary.atRiskCount +
+          summary.ignoredCount +
+          summary.newCount,
+      ).toBe(summary.totalHabitsCount);
+
+      // Attention calculation: Attention = At Risk + Ignored (New MUST NOT affect attention count)
+      expect(summary.attentionCount).toBe(3);
+      expect(summary.bannerMessage.headline).toBe("⚠️ 3 habits need attention.");
+
+      // Insights verification: New habit NEVER appears in needs attention, declining, or doing well
+      const inNeedsAttention = summary.needsAttentionHabits.some((h) => h.id === "n1");
+      const inDeclining = summary.decliningHabits.some((h) => h.id === "n1");
+      const inDoingWell = summary.doingWellHabits.some((h) => h.id === "n1");
+
+      expect(inNeedsAttention).toBe(false);
+      expect(inDeclining).toBe(false);
+      expect(inDoingWell).toBe(false);
     });
   });
 });
