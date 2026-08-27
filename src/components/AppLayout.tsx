@@ -200,7 +200,7 @@ export function AppLayout() {
 
         {/* Page content */}
         <main className="flex-1 p-4 pb-24 lg:p-8 lg:pb-8">
-          <div className="ambient-panel min-h-[calc(100vh-9rem)] rounded-[1.8rem] p-4 lg:p-8">
+          <div className="ambient-panel max-w-6xl mx-auto w-full min-h-[calc(100vh-9rem)] rounded-[1.8rem] p-4 lg:p-8">
             <Outlet />
           </div>
         </main>
