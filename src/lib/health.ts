@@ -124,48 +124,49 @@ export function get14DayHistory(
  */
 export function calculateHabitHealth(
   habitId: string,
-  completionDatesRaw: (string | Date)[],
+  completionDatesRaw: (string | Date | null | undefined)[],
   createdAtStr?: string,
   referenceDate: Date = new Date(),
 ): HabitHealthDetail {
-  // Normalize all completion dates to unique sorted YYYY-MM-DD
+  // Normalize and deduplicate all valid completion dates (YYYY-MM-DD)
   const dateSet = new Set<string>();
   const sortedDates: string[] = [];
 
   for (const dateVal of completionDatesRaw) {
+    if (!dateVal) continue;
     const s = normalizeDateString(dateVal);
-    if (!dateSet.has(s)) {
-      dateSet.add(s);
-      sortedDates.push(s);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      if (!dateSet.has(s)) {
+        dateSet.add(s);
+        sortedDates.push(s);
+      }
     }
   }
   sortedDates.sort();
 
   const fullHistory14 = get14DayHistory(dateSet, referenceDate);
 
-  // Days available since creation
+  // Days available since creation (safely handles future dates, invalid dates, and undefined)
   let daysSinceCreated = 30;
   if (createdAtStr) {
     const createdDate = new Date(createdAtStr);
-    daysSinceCreated = Math.max(
-      1,
-      differenceInCalendarDays(referenceDate, createdDate) + 1,
-    );
+    if (!isNaN(createdDate.getTime())) {
+      const diff = differenceInCalendarDays(referenceDate, createdDate);
+      daysSinceCreated = Math.max(1, diff + 1);
+    }
   }
 
   const isNewHabit = daysSinceCreated <= 3;
   const effectiveWindow = Math.min(14, Math.max(1, daysSinceCreated));
   const totalDays = effectiveWindow;
 
-  // For habits newer than 14 days, return only the days that actually exist
-  const historyDays = isNewHabit
-    ? fullHistory14.slice(14 - effectiveWindow)
-    : fullHistory14;
+  // For habits newer than 14 days, return strictly the days that actually existed
+  const historyDays = fullHistory14.slice(14 - effectiveWindow);
 
   const completedCount = historyDays.filter((d) => d.completed).length;
   const consistencyRate = Math.min(
     100,
-    Math.round((completedCount / effectiveWindow) * 100),
+    Math.max(0, Math.round((completedCount / effectiveWindow) * 100)),
   );
 
   // 14-day history comparisons (using full 14 days)
@@ -176,13 +177,14 @@ export function calculateHabitHealth(
   const recent7Count = recent7.filter((d) => d.completed).length;
   const recent4Count = fullHistory14.slice(10, 14).filter((d) => d.completed).length;
 
-  // Calculate days since last completion
+  // Calculate days since last completion (ignoring any future-dated completions)
   const todayStr = format(referenceDate, "yyyy-MM-dd");
   let daysSinceLast = Infinity;
   let lastCompletedText = "Never completed";
 
-  if (sortedDates.length > 0) {
-    const latestDateStr = sortedDates[sortedDates.length - 1];
+  const validPastOrTodayDates = sortedDates.filter((d) => d <= todayStr);
+  if (validPastOrTodayDates.length > 0) {
+    const latestDateStr = validPastOrTodayDates[validPastOrTodayDates.length - 1];
     const latestDate = new Date(`${latestDateStr}T12:00:00Z`);
     const refDateOnly = new Date(`${todayStr}T12:00:00Z`);
     daysSinceLast = Math.max(0, differenceInCalendarDays(refDateOnly, latestDate));
@@ -212,17 +214,38 @@ export function calculateHabitHealth(
       trendLabel = "New habit";
       trendIcon = "↗";
     }
-  } else if (completed14Count === 0) {
+  } else if (completedCount === 0) {
     trend = "no_activity";
     trendLabel = "— No activity";
     trendIcon = "—";
-  } else if (recent4Count >= 3 && (earlier7Count <= 2 || recent7Count > earlier7Count)) {
-    // Recent burst / recovery
+  } else if (totalDays < 7) {
+    // Small history: no valid 7-vs-7 comparison period exists
+    if (recent4Count >= 3 || daysSinceLast === 0) {
+      trend = "improving";
+      trendLabel = "↗ Improving";
+      trendIcon = "↗";
+    } else {
+      trend = "stable";
+      trendLabel = "→ Stable";
+      trendIcon = "→";
+    }
+  } else if (recent7Count === earlier7Count) {
+    // Identical comparison periods: strictly Stable
+    trend = "stable";
+    trendLabel = "→ Stable";
+    trendIcon = "→";
+  } else if (earlier7Count === 0 && recent7Count >= 1) {
+    // Upward momentum from zero earlier activity
     trend = "improving";
     trendLabel = "↗ Improving";
     trendIcon = "↗";
-  } else if (recent7Count > earlier7Count) {
-    // More activity recently than in earlier period
+  } else if (recent4Count >= 3 && recent7Count > earlier7Count) {
+    // Strong recent burst
+    trend = "improving";
+    trendLabel = "↗ Improving";
+    trendIcon = "↗";
+  } else if (recent7Count >= earlier7Count + 2) {
+    // Measurable improvement of 2+ completions
     trend = "improving";
     trendLabel = "↗ Improving";
     trendIcon = "↗";
@@ -231,19 +254,21 @@ export function calculateHabitHealth(
     trend = "declining";
     trendLabel = "↘ Declining";
     trendIcon = "↘";
-  } else if (earlier7Count > recent7Count + 1 && daysSinceLast >= 3) {
+  } else if (earlier7Count >= recent7Count + 2 && daysSinceLast >= 3) {
+    // Measurable drop of 2+ completions AND missed recent days
     trend = "declining";
     trendLabel = "↘ Declining";
     trendIcon = "↘";
   } else {
+    // Natural stable variation (e.g. 4 vs 3 or 3 vs 4)
     trend = "stable";
     trendLabel = "→ Stable";
     trendIcon = "→";
   }
 
-  // Behavioral comparison text for explainable popover
+  // Behavioral comparison text for explainable popover (only shown when full 14-day history exists)
   let comparisonText = "";
-  if (earlier7Count > 0 || recent7Count > 0) {
+  if (totalDays >= 14 && (earlier7Count > 0 || recent7Count > 0)) {
     comparisonText = `You completed this habit ${recent7Count} ${
       recent7Count === 1 ? "time" : "times"
     } in the last 7 days compared with ${earlier7Count} ${
@@ -286,11 +311,11 @@ export function calculateHabitHealth(
   }
   // 4. Ignored:
   // STRICT RULE: Ignored is ONLY for habits with genuine lack of meaningful recent activity:
-  // - 0 completions in the tracked 14-day period
+  // - 0 completions in the tracked period (for habits established >= 4 days)
   // - OR no activity for 7+ days (unless historically strong habit experiencing recent decline)
   // Any habit with completions within the last 6 days (daysSinceLast < 7) is an ACTIVE habit and NEVER Ignored!
   else if (
-    completed14Count === 0 ||
+    (completedCount === 0 && totalDays >= 4) ||
     (daysSinceLast >= 7 && earlier7Count < 4) ||
     daysSinceLast >= 14
   ) {
@@ -298,8 +323,8 @@ export function calculateHabitHealth(
     trend = "no_activity";
     trendLabel = "— No activity";
     trendIcon = "—";
-    if (completed14Count === 0) {
-      explanation = "No completions during the tracked 14-day period.";
+    if (completedCount === 0) {
+      explanation = "No completions during the tracked period.";
     } else {
       explanation = `No recent activity in the last ${daysSinceLast} days. Overall consistency is low.`;
     }
@@ -307,12 +332,12 @@ export function calculateHabitHealth(
   // 5. Strong: >= 80% consistency, good recent activity (within 2 days), no meaningful decline
   else if (consistencyRate >= 80 && daysSinceLast <= 2 && trend !== "declining") {
     health = "strong";
-    explanation = `High consistency with ${completed14Count}/14 days completed (${consistencyRate}%). Outstanding discipline!`;
+    explanation = `High consistency with ${completedCount}/${totalDays} days completed (${consistencyRate}%). Outstanding discipline!`;
   }
   // 6. On Track: 60-79% consistency, reasonably consistent recent activity, stable or improving
   else if (consistencyRate >= 60 && consistencyRate < 80 && daysSinceLast <= 3 && trend !== "declining") {
     health = "on_track";
-    explanation = `Steady consistency with ${completed14Count}/14 days completed (${consistencyRate}%). Maintaining a solid routine.`;
+    explanation = `Steady consistency with ${completedCount}/${totalDays} days completed (${consistencyRate}%). Maintaining a solid routine.`;
   }
   // 7. At Risk:
   // - < 60% consistency with recent activity (daysSinceLast < 7)
@@ -329,7 +354,7 @@ export function calculateHabitHealth(
     if (trend === "improving") {
       explanation = "Your overall consistency is still low, but your recent activity is improving.";
     } else if (trend === "declining") {
-      explanation = `Your consistency has dropped recently. ${comparisonText}`;
+      explanation = `Your consistency has dropped recently.${comparisonText ? ` ${comparisonText}` : ""}`;
     } else if (daysSinceLast >= 3) {
       explanation = `Missed for ${daysSinceLast} consecutive days. Check in today to preserve your momentum.`;
     } else if (daysSinceLast === 0) {

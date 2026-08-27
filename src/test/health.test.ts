@@ -403,5 +403,150 @@ describe("Habit Health Intelligence System", () => {
       expect(health.explanation).toContain("improving");
     });
   });
+
+  describe("Final Edge-Case & Behavioral-Logic Hardening Suite", () => {
+    it("handles future-created habits safely without crash or negative tracking", () => {
+      const futureDate = format(subDays(refDate, -5), "yyyy-MM-dd"); // 5 days in future
+      const health = calculateHabitHealth("future-habit", [], futureDate, refDate);
+
+      expect(health.health).toBe("on_track");
+      expect(health.trendLabel).toBe("No data yet");
+      expect(health.totalDays).toBe(1);
+      expect(health.consistencyRate14).toBe(0);
+      expect(health.history14Days.length).toBe(1);
+    });
+
+    it("handles partial history without manufacturing missed days (e.g. 5 days old, 11 days old)", () => {
+      // 5 days old (created 4 days ago)
+      const created5DaysAgo = format(subDays(refDate, 4), "yyyy-MM-dd");
+      const completions5 = [0, 2, 4].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health5 = calculateHabitHealth("habit-5d", completions5, created5DaysAgo, refDate);
+
+      expect(health5.totalDays).toBe(5);
+      expect(health5.history14Days.length).toBe(5);
+      expect(health5.completed14Count).toBe(3);
+      expect(health5.consistencyRate14).toBe(60); // 3/5 = 60%
+
+      // 11 days old (created 10 days ago)
+      const created11DaysAgo = format(subDays(refDate, 10), "yyyy-MM-dd");
+      const completions11 = [0, 1, 3, 5, 7, 8, 10].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health11 = calculateHabitHealth("habit-11d", completions11, created11DaysAgo, refDate);
+
+      expect(health11.totalDays).toBe(11);
+      expect(health11.history14Days.length).toBe(11);
+      expect(health11.completed14Count).toBe(7);
+      expect(health11.consistencyRate14).toBe(64); // 7/11 = 64%
+    });
+
+    it("handles duplicate completions on the same day without inflating consistency", () => {
+      const todayStr = format(refDate, "yyyy-MM-dd");
+      const duplicates = [todayStr, todayStr, todayStr, todayStr];
+      const health = calculateHabitHealth("dup-habit", duplicates, "2026-01-01", refDate);
+
+      expect(health.completed14Count).toBe(1);
+      expect(health.consistencyRate14).toBe(7); // 1/14 = 7%
+      expect(health.daysSinceLastCompletion).toBe(0);
+      expect(health.lastCompletedText).toBe("Completed today");
+    });
+
+    it("gracefully handles invalid, null, and malformed completion date records", () => {
+      const corruptCompletions = [
+        null,
+        undefined,
+        "",
+        "invalid-date-string",
+        "2026-99-99",
+        format(refDate, "yyyy-MM-dd"), // 1 valid date
+      ];
+      const health = calculateHabitHealth("corrupt-habit", corruptCompletions, "2026-01-01", refDate);
+
+      expect(health.completed14Count).toBe(1);
+      expect(health.consistencyRate14).toBe(7);
+      expect(health.daysSinceLastCompletion).toBe(0);
+    });
+
+    it("preserves Stable when identical comparison periods exist (2 vs 2)", () => {
+      // 2 in earlier 7 days (days 12, 10), 2 in recent 7 days (days 5, 3)
+      const completions = [3, 5, 10, 12].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("identical-periods", completions, "2026-01-01", refDate);
+
+      expect(health.trend).toBe("stable");
+      expect(health.trendLabel).toBe("→ Stable");
+      expect(health.earlier7Count).toBe(2);
+      expect(health.recent7Count).toBe(2);
+    });
+
+    it("avoids false Declining from single-day variation (4 earlier vs 3 recent)", () => {
+      // 4 in earlier 7 days (days 13, 11, 9, 7), 3 in recent 7 days (days 5, 3, 1)
+      // Days since last is 1 (completed yesterday). Difference is only 1.
+      const completions = [1, 3, 5, 7, 9, 11, 13].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("single-day-diff", completions, "2026-01-01", refDate);
+
+      expect(health.trend).toBe("stable");
+      expect(health.trendLabel).toBe("→ Stable");
+      expect(health.earlier7Count).toBe(4);
+      expect(health.recent7Count).toBe(3);
+    });
+
+    it("detects genuine decline when difference is meaningful (4 earlier vs 1 recent)", () => {
+      // 4 in earlier 7 days (days 13, 11, 9, 7), 1 in recent 7 days (day 5), missed last 5 days
+      const completions = [5, 7, 9, 11, 13].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("genuine-decline", completions, "2026-01-01", refDate);
+
+      expect(health.trend).toBe("declining");
+      expect(health.trendLabel).toBe("↘ Declining");
+      expect(health.earlier7Count).toBe(4);
+      expect(health.recent7Count).toBe(1);
+    });
+
+    it("detects improvement when moving from 0 earlier to positive recent (0 earlier vs 1 recent)", () => {
+      // 0 in earlier 7 days, 1 in recent 7 days (today)
+      const completions = [0].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+      const health = calculateHabitHealth("zero-to-one", completions, "2026-01-01", refDate);
+
+      expect(health.trend).toBe("improving");
+      expect(health.trendLabel).toBe("↗ Improving");
+      expect(health.earlier7Count).toBe(0);
+      expect(health.recent7Count).toBe(1);
+    });
+
+    it("enforces universal mathematical invariants across random patterns", () => {
+      const patterns = [
+        [],
+        [0],
+        [1],
+        [0, 1],
+        [0, 2, 4, 6],
+        [7, 8, 9, 10, 11, 12, 13],
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ];
+
+      for (let idx = 0; idx < patterns.length; idx++) {
+        const dates = patterns[idx].map((i) => format(subDays(refDate, i), "yyyy-MM-dd"));
+        const health = calculateHabitHealth(`inv-${idx}`, dates, "2026-01-01", refDate);
+
+        // 1. Consistency bounds
+        expect(health.consistencyRate14).toBeGreaterThanOrEqual(0);
+        expect(health.consistencyRate14).toBeLessThanOrEqual(100);
+
+        // 2. Count bounds
+        expect(health.completed14Count).toBeGreaterThanOrEqual(0);
+        expect(health.completed14Count).toBeLessThanOrEqual(health.totalDays);
+
+        // 3. Ignored invariants: Ignored habits NEVER have trend === "stable"
+        if (health.health === "ignored") {
+          expect(health.trend).not.toBe("stable");
+          expect(health.trendLabel).not.toBe("→ Stable");
+        }
+
+        // 4. Completed today invariants: NEVER no_activity
+        if (health.daysSinceLastCompletion === 0) {
+          expect(health.trend).not.toBe("no_activity");
+          expect(health.trendLabel).not.toBe("— No activity");
+          expect(health.explanation).not.toContain("No recent activity");
+        }
+      }
+    });
+  });
 });
 
