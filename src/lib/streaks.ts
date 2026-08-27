@@ -4,14 +4,19 @@ import { format, subDays, parseISO, differenceInDays } from "date-fns";
  * Standardize any date input (YYYY-MM-DD string or TIMESTAMPTZ ISO string or Date)
  * into a YYYY-MM-DD formatted calendar date string.
  */
-export function normalizeDateString(input: string | Date): string {
+export function normalizeDateString(input: string | Date | null | undefined): string {
+  if (!input) return "";
   if (input instanceof Date) {
+    if (isNaN(input.getTime())) return "";
     return format(input, "yyyy-MM-dd");
   }
   if (typeof input === "string") {
-    return input.slice(0, 10);
+    const trimmed = input.trim();
+    if (trimmed.length >= 10 && /^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+      return trimmed.slice(0, 10);
+    }
   }
-  return format(new Date(), "yyyy-MM-dd");
+  return "";
 }
 
 export interface PerHabitStreakResult {
@@ -28,17 +33,21 @@ export interface PerHabitStreakResult {
  * - isAtRisk: true if completed yesterday but not yet today.
  */
 export function calculatePerHabitStreak(
-  completionDates: (string | Date)[],
+  completionDates: (string | Date | null | undefined)[],
   referenceDate: Date = new Date(),
 ): PerHabitStreakResult {
   if (!completionDates || completionDates.length === 0) {
     return { current: 0, best: 0, isAtRisk: false };
   }
 
-  // Convert all completion dates to unique YYYY-MM-DD set
+  // Convert all valid completion dates to unique YYYY-MM-DD set
   const dateSet = new Set<string>();
   for (const dateVal of completionDates) {
-    dateSet.add(normalizeDateString(dateVal));
+    if (!dateVal) continue;
+    const s = normalizeDateString(dateVal);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      dateSet.add(s);
+    }
   }
 
   const todayStr = format(referenceDate, "yyyy-MM-dd");

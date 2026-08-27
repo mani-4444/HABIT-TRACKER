@@ -23,6 +23,13 @@ import {
   normalizeDateString,
   HabitCorrelation,
 } from "@/lib/streaks";
+import {
+  calculateHabitHealth,
+  buildHealthDashboardSummary,
+  HabitHealthDetail,
+  HealthDashboardSummary,
+  HabitHealthCategory,
+} from "@/lib/health";
 
 export interface Habit {
   id: string;
@@ -224,6 +231,8 @@ export function useToggleCompletion() {
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       queryClient.invalidateQueries({ queryKey: ["streakStats"] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      queryClient.invalidateQueries({ queryKey: ["habitHealth"] });
+      queryClient.invalidateQueries({ queryKey: ["habitHistory"] });
     },
   });
 }
@@ -731,3 +740,202 @@ export function useAnalytics() {
     enabled: !!user,
   });
 }
+
+// ============================================
+// SINGLE HABIT COMPLETION HISTORY & HEATMAP DATA
+// ============================================
+
+export interface HabitHistoryData {
+  habitId: string;
+  completionDates: Set<string>;
+  completionsByDate: Record<string, number>;
+  totalCompletions: number;
+  currentStreak: number;
+  bestStreak: number;
+  isAtRisk: boolean;
+  dayOfWeekCounts: number[];
+  monthlyCounts: { monthKey: string; monthLabel: string; count: number }[];
+}
+
+export function useHabitHistory(habitId?: string | null, monthsBack = 12) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["habitHistory", habitId, monthsBack, user?.id],
+    queryFn: async (): Promise<HabitHistoryData> => {
+      if (!habitId) {
+        return {
+          habitId: "",
+          completionDates: new Set(),
+          completionsByDate: {},
+          totalCompletions: 0,
+          currentStreak: 0,
+          bestStreak: 0,
+          isAtRisk: false,
+          dayOfWeekCounts: [0, 0, 0, 0, 0, 0, 0],
+          monthlyCounts: [],
+        };
+      }
+
+      const today = new Date();
+      const startDate = startOfDay(subMonths(startOfMonth(today), monthsBack - 1));
+
+      const { data, error } = await supabase
+        .from("habit_completions")
+        .select("completed_at")
+        .eq("habit_id", habitId)
+        .gte("completed_at", startDate.toISOString())
+        .order("completed_at", { ascending: true });
+
+      if (error) throw error;
+
+      const completionDates = new Set<string>();
+      const completionsByDate: Record<string, number> = {};
+      const dayOfWeekCounts = [0, 0, 0, 0, 0, 0, 0];
+      const allDates: string[] = [];
+
+      for (const item of data || []) {
+        const dateStr = normalizeDateString(item.completed_at);
+        completionDates.add(dateStr);
+        completionsByDate[dateStr] = (completionsByDate[dateStr] || 0) + 1;
+        allDates.push(item.completed_at);
+
+        try {
+          const d = new Date(item.completed_at);
+          const dow = d.getDay();
+          dayOfWeekCounts[dow]++;
+        } catch {
+          // ignore
+        }
+      }
+
+      const streak = calculatePerHabitStreak(allDates);
+
+      // Monthly counts
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const monthlyCounts: { monthKey: string; monthLabel: string; count: number }[] = [];
+
+      for (let i = monthsBack - 1; i >= 0; i--) {
+        const mDate = subMonths(today, i);
+        const mKey = format(mDate, "yyyy-MM");
+        const mLabel = monthNames[mDate.getMonth()];
+        let count = 0;
+        for (const [dStr, num] of Object.entries(completionsByDate)) {
+          if (dStr.startsWith(mKey)) {
+            count += num;
+          }
+        }
+        monthlyCounts.push({ monthKey: mKey, monthLabel: mLabel, count });
+      }
+
+      return {
+        habitId,
+        completionDates,
+        completionsByDate,
+        totalCompletions: data?.length || 0,
+        currentStreak: streak.current,
+        bestStreak: streak.best,
+        isAtRisk: streak.isAtRisk,
+        dayOfWeekCounts,
+        monthlyCounts,
+      };
+    },
+    enabled: !!user && !!habitId,
+  });
+}
+
+// ============================================
+// HABIT HEALTH DASHBOARD HOOK
+// ============================================
+
+export function useHabitHealthDashboard() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["habitHealth", user?.id],
+    queryFn: async () => {
+      const { data: habits, error: habitsError } = await supabase
+        .from("habits")
+        .select("id, name, emoji, created_at")
+        .eq("is_archived", false)
+        .order("created_at", { ascending: true });
+
+      if (habitsError) throw habitsError;
+      if (!habits || habits.length === 0) {
+        return {
+          habits: [],
+          healthMap: {} as Record<string, HabitHealthDetail>,
+          summary: {
+            strongCount: 0,
+            onTrackCount: 0,
+            atRiskCount: 0,
+            ignoredCount: 0,
+            newCount: 0,
+            totalHabitsCount: 0,
+            attentionCount: 0,
+            doingWellHabits: [],
+            needsAttentionHabits: [],
+            decliningHabits: [],
+            improvingHabits: [],
+            bannerMessage: {
+              type: "neutral" as const,
+              headline: "No habits tracked yet. Create your first habit to begin!",
+            },
+          },
+        };
+      }
+
+      const habitIds = habits.map((h) => h.id);
+      const fortyFiveDaysAgo = startOfDay(subDays(new Date(), 45));
+
+      const { data: completions, error: completionsError } = await supabase
+        .from("habit_completions")
+        .select("habit_id, completed_at")
+        .in("habit_id", habitIds)
+        .gte("completed_at", fortyFiveDaysAgo.toISOString())
+        .order("completed_at", { ascending: false });
+
+      if (completionsError) throw completionsError;
+
+      const healthMap: Record<string, HabitHealthDetail> = {};
+      const refDate = new Date();
+
+      for (const habit of habits) {
+        const habitCompletions = (completions || [])
+          .filter((c) => c.habit_id === habit.id)
+          .map((c) => c.completed_at);
+
+        healthMap[habit.id] = calculateHabitHealth(
+          habit.id,
+          habitCompletions,
+          habit.created_at,
+          refDate,
+        );
+      }
+
+      const summary = buildHealthDashboardSummary(habits, healthMap);
+
+      return {
+        habits,
+        healthMap,
+        summary,
+      };
+    },
+    enabled: !!user,
+  });
+}
+
+

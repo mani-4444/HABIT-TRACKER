@@ -1,8 +1,11 @@
-import { Target, TrendingUp, Loader2, Flame, Layers } from "lucide-react";
+import { useState } from "react";
+import { Target, TrendingUp, Loader2, Flame, Layers, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
 import { ProgressRing } from "@/components/ProgressRing";
-import { useAnalytics, useHabitStreakStats } from "@/hooks/useHabits";
+import { HabitActivityModal } from "@/components/HabitActivityModal";
+import { useAnalytics, useHabitStreakStats, useHabits } from "@/hooks/useHabits";
 import {
   LineChart,
   Line,
@@ -16,6 +19,8 @@ import {
 } from "recharts";
 
 export default function Analysis() {
+  const [selectedHabitForDetails, setSelectedHabitForDetails] = useState<string | null>(null);
+  const { data: habitsList } = useHabits();
   const { data: analytics, isLoading, error } = useAnalytics();
   const {
     overall: streakStats,
@@ -382,17 +387,28 @@ export default function Analysis() {
                     </div>
 
                     {/* Rate Bar */}
-                    <div className="flex items-center gap-3 min-w-[140px]">
-                      <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="flex items-center gap-3 min-w-[130px]">
+                      <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full bg-success rounded-full transition-all duration-300"
                           style={{ width: `${habit.rate}%` }}
                         />
                       </div>
-                      <span className="text-sm font-medium w-12 text-right">
+                      <span className="text-sm font-medium w-10 text-right">
                         {habit.rate}%
                       </span>
                     </div>
+
+                    {/* View Details / Heatmap Action */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedHabitForDetails(habit.id)}
+                      className="rounded-xl h-8 px-3 text-xs gap-1.5 border-border/60 hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all duration-200 shrink-0 shadow-sm"
+                    >
+                      <Activity className="h-3.5 w-3.5 text-emerald-500" />
+                      <span>View Details</span>
+                    </Button>
                   </div>
                 );
               })}
@@ -451,6 +467,18 @@ export default function Analysis() {
           </CardContent>
         </Card>
       )}
+
+      {/* LeetCode-style Habit Activity Heatmap Modal */}
+      <HabitActivityModal
+        isOpen={!!selectedHabitForDetails}
+        onClose={() => setSelectedHabitForDetails(null)}
+        initialHabitId={selectedHabitForDetails}
+        habits={
+          habitsList && habitsList.length > 0
+            ? habitsList
+            : habitStats.map((h) => ({ id: h.id, name: h.name, emoji: h.emoji }))
+        }
+      />
     </div>
   );
 }
