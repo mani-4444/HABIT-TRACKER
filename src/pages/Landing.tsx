@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import Testimonial from "@/components/ui/testimonial";
 
 const features = [
   {
@@ -221,7 +222,25 @@ export default function Landing() {
           ))}
         </div>
 
-        <div className="mt-8 rounded-3xl border border-border/70 bg-card/75 p-6 text-center shadow-soft lg:p-8">
+        {/* Community Testimonials Section */}
+        <div className="mt-20 sm:mt-28">
+          <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3.5 py-1 sm:px-4 sm:py-1.5 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4 shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>Real Habit Builders</span>
+            </div>
+            <h2 className="font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+              Consistency breeds transformation.
+            </h2>
+            <p className="mt-4 text-base sm:text-lg text-muted-foreground text-balance max-w-xl mx-auto">
+              Real stories from daily habit builders who turned small, repeated actions into unbreakable momentum.
+            </p>
+          </div>
+
+          <Testimonial />
+        </div>
+
+        <div className="mt-12 sm:mt-16 rounded-3xl border border-border/70 bg-card/75 p-6 text-center shadow-soft lg:p-8">
           <p className="font-display text-2xl font-bold text-foreground lg:text-3xl">
             Grounded in your facts, never generic advice.
           </p>
