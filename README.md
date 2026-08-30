@@ -37,6 +37,8 @@
 | ✅ **Habit CRUD**                      | Create, read, update, and delete habits with custom emojis   |
 | 📅 **Daily Tracking**                  | Simple one-click habit completion tracking                   |
 | 📊 **Analytics Dashboard**             | Visual insights into streaks, completion rates, and patterns |
+| 🤖 **AI Habit Coaching**               | Evidence-backed pattern detection and weekly behavioral reviews |
+| 🌟 **Community Testimonials**          | High-trust social proof showcase with verified streak badges |
 | 🛡️ **Protected Routes**                | Route guards ensuring authenticated access only              |
 
 ---
@@ -137,14 +139,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 
 ```
 HABIT-TRACKER/
-├── public/                 # Static assets
+├── public/                 # Static assets (favicons, testimonial portraits)
+│   └── testimonials/       # Authentic portraits for community testimonials
 ├── src/
 │   ├── components/         # Reusable UI components
-│   │   └── ui/             # shadcn/ui components
+│   │   └── ui/             # shadcn/ui components (testimonial, button, card, etc.)
 │   ├── contexts/           # React context providers (Auth)
 │   ├── hooks/              # Custom React hooks
 │   ├── lib/                # Utilities and Supabase client
-│   ├── pages/              # Route page components
+│   ├── pages/              # Route page components (Landing, Overview, Analysis, etc.)
 │   └── test/               # Test files and setup
 ├── .env.example            # Environment variables template
 ├── index.html              # HTML entry point
@@ -152,6 +155,29 @@ HABIT-TRACKER/
 ├── vite.config.ts          # Vite configuration
 └── tsconfig.json           # TypeScript configuration
 ```
+
+### 💬 Community Testimonial Component
+
+Located in `src/components/ui/testimonial.tsx`, this component renders equal-height, high-trust social proof cards with:
+- Photorealistic portraits with smooth bottom cinematic gradients
+- Amber streak pill badges with animated `Flame` icons
+- 5-star ratings (`5.0`) with subtle quote accents
+- Emerald `Verified` indicators
+- Scannable quotes and category tags
+
+**Usage:**
+
+```tsx
+import Testimonial from "@/components/ui/testimonial";
+
+// Render default habit builder stories (Gora, Geetha, Dong Lee)
+<Testimonial />
+
+// Or pass custom items via props
+<Testimonial items={customTestimonialList} />
+```
+
+A standalone demo wrapper is also available at `src/components/ui/demo.tsx`.
 
 ---
 
