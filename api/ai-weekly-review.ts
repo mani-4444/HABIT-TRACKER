@@ -15,23 +15,40 @@ import {
   type WeeklyReview,
 } from "./_lib/schemas";
 
+function parseRequestBody(body: unknown): Record<string, unknown> {
+  if (!body) return {};
+  if (typeof body === "object" && !Array.isArray(body)) return body as Record<string, unknown>;
+  if (typeof body === "string") {
+    try {
+      const parsed = JSON.parse(body);
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const auth = await authenticate(req);
-  if (!isAuthSuccess(auth)) {
-    return res.status(auth.status).json({ error: auth.error });
-  }
-  const { user, supabase } = auth;
-
-  const parseReq = WeeklyReviewRequestSchema.safeParse(req.body || {});
-  const { weekOffset, timezoneOffset } = parseReq.success
-    ? parseReq.data
-    : { weekOffset: 0, timezoneOffset: 0 };
-
   try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
+    const auth = await authenticate(req);
+    if (!isAuthSuccess(auth)) {
+      return res.status(auth.status).json({ error: auth.error });
+    }
+    const { user, supabase } = auth;
+
+    const rawBody = parseRequestBody(req.body);
+    const parseReq = WeeklyReviewRequestSchema.safeParse(rawBody);
+    const { weekOffset, timezoneOffset } = parseReq.success
+      ? parseReq.data
+      : { weekOffset: 0, timezoneOffset: 0 };
+
     const context = await getCanonicalAIContext(
       supabase,
       user.id,

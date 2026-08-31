@@ -23,26 +23,42 @@ import {
 
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
+function parseRequestBody(body: unknown): Record<string, unknown> {
+  if (!body) return {};
+  if (typeof body === "object" && !Array.isArray(body)) return body as Record<string, unknown>;
+  if (typeof body === "string") {
+    try {
+      const parsed = JSON.parse(body);
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  // 1. Authenticate request
-  const auth = await authenticate(req);
-  if (!isAuthSuccess(auth)) {
-    return res.status(auth.status).json({ error: auth.error });
-  }
-  const { user, supabase } = auth;
-
-  // 2. Validate request body parameters
-  const parseReq = AIInsightsRequestSchema.safeParse(req.body || {});
-  const { period, timezoneOffset } = parseReq.success
-    ? parseReq.data
-    : { period: "30d" as const, timezoneOffset: 0 };
-  const periodDays = period === "90d" ? 90 : 30;
-
   try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
+    // 1. Authenticate request
+    const auth = await authenticate(req);
+    if (!isAuthSuccess(auth)) {
+      return res.status(auth.status).json({ error: auth.error });
+    }
+    const { user, supabase } = auth;
+
+    // 2. Validate request body parameters
+    const rawBody = parseRequestBody(req.body);
+    const parseReq = AIInsightsRequestSchema.safeParse(rawBody);
+    const { period, timezoneOffset } = parseReq.success
+      ? parseReq.data
+      : { period: "30d" as const, timezoneOffset: 0 };
+    const periodDays = period === "90d" ? 90 : 30;
     // 3. Check Cache
     const { data: cacheRow } = await supabase
       .from("ai_insights_cache")

@@ -22,7 +22,7 @@ import {
   type PerHabitStreakResult,
   type HabitConsistencyResult,
   type HabitCorrelation,
-} from "@/lib/streaks";
+} from "../../src/lib/streaks";
 
 // ── Shared Types ─────────────────────────────────────────────────────────────
 
@@ -561,12 +561,14 @@ export async function fetchUserHabitData(
 
   if (habitsRes.error) throw new Error(`Failed to fetch habits: ${habitsRes.error.message}`);
   if (completionsRes.error) throw new Error(`Failed to fetch completions: ${completionsRes.error.message}`);
-  if (todosRes.error) throw new Error(`Failed to fetch todos: ${todosRes.error.message}`);
+
+  // daily_todos is optional/non-fatal if table not yet migrated
+  const todos = todosRes.error ? [] : (todosRes.data || []);
 
   return {
     habits: habitsRes.data || [],
     completions: completionsRes.data || [],
-    todos: todosRes.data || [],
+    todos,
   };
 }
 

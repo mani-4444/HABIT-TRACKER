@@ -50,45 +50,50 @@ export function isAuthSuccess(result: AuthResult): result is AuthSuccess {
  *   const { user, supabase } = auth;
  */
 export async function authenticate(req: VercelRequest): Promise<AuthResult> {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
-    return { error: "Missing authorization token", status: 401 };
-  }
+  try {
+    const rawHeader = req.headers.authorization || (req.headers.Authorization as string | undefined);
+    if (!rawHeader || typeof rawHeader !== "string" || !rawHeader.startsWith("Bearer ")) {
+      return { error: "Missing authorization token", status: 401 };
+    }
 
-  const token = authHeader.slice(7).trim();
-  if (!token) {
-    return { error: "Empty authorization token", status: 401 };
-  }
+    const token = rawHeader.slice(7).trim();
+    if (!token) {
+      return { error: "Empty authorization token", status: 401 };
+    }
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseAnonKey =
-    process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseAnonKey =
+      process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return { error: "Server misconfiguration", status: 500 };
-  }
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return {
+        error: "Server misconfiguration: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is missing in server environment variables.",
+        status: 500,
+      };
+    }
 
-  // Build an RLS-scoped client: all DB queries will be subject to RLS
-  // policies using this user's JWT — we never use the service-role key
-  // for user-data queries.
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    // Build an RLS-scoped client: all DB queries will be subject to RLS
+    // policies using this user's JWT — we never use the service-role key
+    // for user-data queries.
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    },
-  });
+    });
 
-  // Validate the token server-side — identity comes from Supabase, never
-  // from any client-supplied field.
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser(token);
+    // Validate the token server-side — identity comes from Supabase, never
+    // from any client-supplied field.
+    const userRes = await supabase.auth.getUser(token);
+    if (userRes.error || !userRes.data?.user) {
+      return { error: userRes.error?.message || "Invalid or expired token", status: 401 };
+    }
 
-  if (authError || !user) {
-    return { error: "Invalid or expired token", status: 401 };
+    const user = userRes.data.user;
+    return { user: { id: user.id, email: user.email }, supabase, token };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Authentication processing failed";
+    return { error: message, status: 500 };
   }
-
-  return { user: { id: user.id, email: user.email }, supabase, token };
 }

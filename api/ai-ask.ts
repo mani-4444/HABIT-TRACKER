@@ -16,35 +16,52 @@ import {
   type AskHabitsResponse,
 } from "./_lib/schemas";
 
+function parseRequestBody(body: unknown): Record<string, unknown> {
+  if (!body) return {};
+  if (typeof body === "object" && !Array.isArray(body)) return body as Record<string, unknown>;
+  if (typeof body === "string") {
+    try {
+      const parsed = JSON.parse(body);
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const auth = await authenticate(req);
-  if (!isAuthSuccess(auth)) {
-    return res.status(auth.status).json({ error: auth.error });
-  }
-  const { user, supabase } = auth;
-
-  const parseReq = AskHabitsRequestSchema.safeParse(req.body || {});
-  if (!parseReq.success) {
-    return res.status(400).json({ error: "Invalid question. Please provide a non-empty question under 500 characters." });
-  }
-
-  const { question, timezoneOffset } = parseReq.data;
-  const intent = classifyQuestionIntent(question);
-
-  if (intent === "OUT_OF_DOMAIN") {
-    const fallback: AskHabitsResponse = {
-      answer: "I can only answer questions related to your tracked habits, routines, streaks, and completion history.",
-      evidence: [],
-      intent: "OUT_OF_DOMAIN",
-    };
-    return res.status(200).json(fallback);
-  }
-
   try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
+    const auth = await authenticate(req);
+    if (!isAuthSuccess(auth)) {
+      return res.status(auth.status).json({ error: auth.error });
+    }
+    const { user, supabase } = auth;
+
+    const rawBody = parseRequestBody(req.body);
+    const parseReq = AskHabitsRequestSchema.safeParse(rawBody);
+    if (!parseReq.success) {
+      return res.status(400).json({ error: "Invalid question. Please provide a non-empty question under 500 characters." });
+    }
+
+    const { question, timezoneOffset } = parseReq.data;
+    const intent = classifyQuestionIntent(question);
+
+    if (intent === "OUT_OF_DOMAIN") {
+      const fallback: AskHabitsResponse = {
+        answer: "I can only answer questions related to your tracked habits, routines, streaks, and completion history.",
+        evidence: [],
+        intent: "OUT_OF_DOMAIN",
+      };
+      return res.status(200).json(fallback);
+    }
+
     const context = await getCanonicalAIContext(
       supabase,
       user.id,

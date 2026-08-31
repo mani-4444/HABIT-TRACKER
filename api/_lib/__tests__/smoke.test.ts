@@ -10,7 +10,7 @@ import {
   calculatePerfectDayStreak,
   calculateHabitConsistency,
   calculateHabitCorrelations,
-} from "@/lib/streaks";
+} from "../../../src/lib/streaks";
 
 describe("api/_lib smoke test — streaks.ts import resolution", () => {
   it("imports normalizeDateString from src/lib/streaks via @/ alias", () => {
