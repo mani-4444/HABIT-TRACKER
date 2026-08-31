@@ -45,8 +45,13 @@ export interface GenerateStructuredOptions<T extends z.ZodTypeAny> {
 }
 
 const PRIMARY_MODEL = "openai/gpt-oss-20b";
-const FALLBACK_MODELS = ["qwen/qwen3.6-27b", "openai/gpt-oss-120b"];
-const DEFAULT_TIMEOUT_MS = 20000;
+const FALLBACK_MODELS = [
+  "openai/gpt-oss-120b",
+  "qwen/qwen3.8-27b",
+  "qwen/qwen3.6-27b",
+  "groq/compound-mini",
+];
+const DEFAULT_TIMEOUT_MS = 25000;
 
 /**
  * Call Groq chat completions API requesting a structured JSON response,
@@ -66,7 +71,7 @@ export async function generateStructuredAIResponse<T extends z.ZodTypeAny>({
   if (!apiKey) {
     throw new AIProviderError(
       "MISSING_API_KEY",
-      "GROQ_API_KEY is not configured on the server",
+      "GROQ_API_KEY is not configured on the server. Please add GROQ_API_KEY in your Vercel Project Settings > Environment Variables.",
       500
     );
   }

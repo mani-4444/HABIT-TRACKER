@@ -85,6 +85,9 @@ export default function AIInsightsPage() {
       try {
         json = JSON.parse(raw);
       } catch {
+        if (raw.includes("FUNCTION_INVOCATION_FAILED") || res.status >= 500) {
+          throw new Error("Server error: Please ensure GROQ_API_KEY, VITE_SUPABASE_URL, and VITE_SUPABASE_ANON_KEY are set in your Vercel Project Environment Variables.");
+        }
         if (!res.ok) {
           throw new Error(`AI request error (${res.status}): ${raw.slice(0, 120)}`);
         }
@@ -132,6 +135,9 @@ export default function AIInsightsPage() {
       try {
         json = JSON.parse(raw);
       } catch {
+        if (raw.includes("FUNCTION_INVOCATION_FAILED") || res.status >= 500) {
+          throw new Error("Server error: Please ensure GROQ_API_KEY, VITE_SUPABASE_URL, and VITE_SUPABASE_ANON_KEY are set in your Vercel Project Environment Variables.");
+        }
         if (!res.ok) {
           throw new Error(`AI request error (${res.status}): ${raw.slice(0, 120)}`);
         }
