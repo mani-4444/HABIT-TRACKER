@@ -3,15 +3,16 @@ import {
   Sparkles,
   Loader2,
   RefreshCw,
-  Brain,
   WandSparkles,
   HelpCircle,
   CalendarCheck,
   Send,
   Lightbulb,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
+import { cn } from "@/lib/utils";
+import { toneStyle } from "@/lib/tones";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useAIInsights } from "@/hooks/useAIInsights";
@@ -165,287 +166,280 @@ export default function AIInsightsPage() {
   ) || 0;
 
   return (
-    <div className="space-y-8 pb-20 lg:pb-0">
-      {/* Header Banner */}
-      <section className="rounded-[1.9rem] border border-border/70 bg-gradient-to-br from-card via-card/90 to-accent/20 p-6 shadow-soft lg:p-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <p className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              <Brain className="h-3.5 w-3.5 text-primary shrink-0" />
-              Habit Intelligence Hub
-            </p>
-            <h1 className="font-display text-3xl font-bold text-foreground lg:text-5xl">
-              AI Coaching & Insights
-            </h1>
-            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground lg:text-base">
-              Evidence-grounded behavioral intelligence derived directly from your tracked habit data, trends, and logging patterns.
-            </p>
-          </div>
-
-          <div className="self-start lg:self-auto">
-            <AIStatus
-              status={isLoading ? "loading" : aiResponse ? "ready" : "idle"}
-              signalCount={totalEvidenceCount}
-              lastGeneratedAt={aiResponse?.generatedAt}
-              dataPeriod={period}
-            />
-          </div>
-        </div>
-      </section>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Habit intelligence hub"
+        title="AI"
+        accent="coaching & insights."
+        description="Evidence-grounded behavioral intelligence derived directly from your tracked habit data, trends, and logging patterns."
+        actions={
+          <AIStatus
+            status={isLoading ? "loading" : aiResponse ? "ready" : "idle"}
+            signalCount={totalEvidenceCount}
+            lastGeneratedAt={aiResponse?.generatedAt}
+            dataPeriod={period}
+          />
+        }
+      />
 
       {/* Generator Card & Pattern Analysis */}
-      <Card variant="feature" className="rounded-[1.9rem] border-primary/20 bg-card/65 shadow-soft">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 shadow-inner-soft">
-              <WandSparkles className="h-7 w-7 text-primary" />
-            </div>
-            <div className="space-y-1 max-w-xl">
-              <CardTitle className="font-display text-2xl font-bold">
-                Run Pattern Analysis
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Synthesize your habits, streaks, weekday parity, and logging-time patterns into evidence-backed guidance.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <div className="flex items-center rounded-xl border border-border bg-card p-1">
-                <Button
-                  size="sm"
-                  variant={period === "30d" ? "default" : "ghost"}
-                  className="h-8 rounded-lg text-xs"
-                  onClick={() => setPeriod("30d")}
-                >
-                  30 Days
-                </Button>
-                <Button
-                  size="sm"
-                  variant={period === "90d" ? "default" : "ghost"}
-                  className="h-8 rounded-lg text-xs"
-                  onClick={() => setPeriod("90d")}
-                >
-                  90 Days
-                </Button>
-              </div>
-
-              <Button
-                onClick={handleGenerate}
-                disabled={isLoading}
-                size="lg"
-                variant={aiResponse ? "outline" : "hero"}
-                className="min-h-11 rounded-2xl px-6"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing Patterns...
-                  </>
-                ) : aiResponse ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Refresh Analysis
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Insights
-                  </>
-                )}
-              </Button>
-            </div>
+      <section className="ambient-panel relative overflow-hidden rounded-[1.9rem] p-5 sm:p-8">
+        <div aria-hidden className="pointer-events-none absolute -top-24 left-1/2 h-48 w-96 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
+        <div className="relative flex flex-col items-center gap-4 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 shadow-inner-soft">
+            <WandSparkles className="h-7 w-7 text-primary" />
           </div>
-        </CardHeader>
+          <div className="max-w-xl space-y-1">
+            <h2 className="font-display text-2xl font-bold sm:text-3xl">Run Pattern Analysis</h2>
+            <p className="text-sm text-muted-foreground">
+              Synthesize your habits, streaks, weekday parity, and logging-time patterns into evidence-backed guidance.
+            </p>
+          </div>
 
-        <CardContent className="space-y-6">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <div role="group" aria-label="Analysis period" className="flex items-center rounded-xl border border-border bg-card/80 p-1">
+              {(["30d", "90d"] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  aria-pressed={period === p}
+                  onClick={() => setPeriod(p)}
+                  className={cn(
+                    "h-8 rounded-lg px-3 text-xs font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    period === p
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {p === "30d" ? "30 Days" : "90 Days"}
+                </button>
+              ))}
+            </div>
+
+            <Button
+              onClick={handleGenerate}
+              disabled={isLoading}
+              size="lg"
+              variant={aiResponse ? "outline" : "hero"}
+              className="min-h-11 rounded-2xl px-6"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing Patterns...
+                </>
+              ) : aiResponse ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh Analysis
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Insights
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        <div className="relative mt-8 space-y-6">
           {error && !isLoading && (
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive shadow-xs">
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">
               {error}
             </div>
           )}
 
           {isLoading && (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              <div className="h-64 animate-pulse rounded-2xl bg-muted/60" />
-              <div className="h-64 animate-pulse rounded-2xl bg-muted/60" />
-              <div className="h-64 animate-pulse rounded-2xl bg-muted/60" />
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-64 animate-pulse rounded-3xl bg-muted/60" style={{ animationDelay: `${i * 150}ms` }} />
+              ))}
             </div>
           )}
 
           {/* Render Insights List */}
           {aiResponse && !isLoading && (
-            <div className="space-y-6">
-              {aiResponse.insights.length === 0 ? (
-                <div className="rounded-2xl border border-border/70 bg-card/75 p-8 text-center shadow-xs">
-                  <Sparkles className="mx-auto mb-3 h-10 w-10 text-muted-foreground/45" />
-                  <p className="text-base font-medium text-foreground">
-                    No active habits found
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Add and complete habits to unlock evidence-backed AI coaching.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                  {aiResponse.insights.map((insight) => (
-                    <InsightCard key={insight.id} insight={insight} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Dual Section: Ask Your Habits + Weekly Review */}
-      <div className="grid gap-8 lg:grid-cols-12 items-start">
-        {/* Ask Your Habits Section */}
-        <Card variant="feature" className="lg:col-span-5 rounded-[1.9rem] border-border/70 bg-card/70 shadow-soft">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-primary shrink-0" />
-              <CardTitle className="text-xl font-bold">Ask Your Habits</CardTitle>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Ask natural language questions grounded in your historical data.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleAskQuestion} className="flex gap-2">
-              <Input
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="e.g. Which habit should I focus on improving?"
-                className="rounded-xl"
-                disabled={askLoading}
-              />
-              <Button type="submit" disabled={askLoading || !question.trim()} className="rounded-xl px-4 shrink-0">
-                {askLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
-            </form>
-
-            {/* Prompt Chips */}
-            <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Suggested Questions
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {SUGGESTED_QUESTIONS.map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => handleAskQuestion(undefined, q)}
-                    disabled={askLoading}
-                    className="rounded-lg border border-border/70 bg-card/80 px-2.5 py-1 text-left text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground hover:bg-primary/5 transition-colors"
-                  >
-                    {q}
-                  </button>
+            aiResponse.insights.length === 0 ? (
+              <div className="rounded-2xl border border-border/70 bg-card/75 p-8 text-center">
+                <Sparkles className="mx-auto mb-3 h-10 w-10 text-muted-foreground/45" />
+                <p className="text-base font-medium text-foreground">
+                  No active habits found
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add and complete habits to unlock evidence-backed AI coaching.
+                </p>
+              </div>
+            ) : (
+              <div className="stagger grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {aiResponse.insights.map((insight) => (
+                  <InsightCard key={insight.id} insight={insight} />
                 ))}
               </div>
+            )
+          )}
+        </div>
+      </section>
+
+      {/* Dual Section: Ask Your Habits + Weekly Review */}
+      <div className="grid items-start gap-6 lg:grid-cols-12">
+        {/* Ask Your Habits Section */}
+        <section className="ambient-panel space-y-4 rounded-[1.9rem] p-5 sm:p-6 lg:col-span-5">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                <HelpCircle className="h-5 w-5" />
+              </span>
+              <h2 className="font-display text-xl font-bold">Ask Your Habits</h2>
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Ask natural language questions grounded in your historical data.
+            </p>
+          </div>
 
-            {askError && (
-              <p className="text-xs text-destructive">{askError}</p>
-            )}
+          <form onSubmit={handleAskQuestion} className="flex gap-2">
+            <label htmlFor="ask-question" className="sr-only">
+              Your question
+            </label>
+            <Input
+              id="ask-question"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="e.g. Which habit should I focus on improving?"
+              className="h-11 rounded-xl border-border/75 bg-background/80"
+              disabled={askLoading}
+            />
+            <Button
+              type="submit"
+              aria-label="Ask"
+              disabled={askLoading || !question.trim()}
+              className="h-11 shrink-0 rounded-xl px-4"
+            >
+              {askLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </form>
 
-            {askResult && (
-              <div className="rounded-2xl border border-primary/20 bg-card/90 p-4 space-y-2.5 shadow-xs">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px] uppercase font-semibold text-primary border-primary/30">
-                    Intent: {askResult.intent}
-                  </Badge>
-                </div>
-                <p className="text-sm font-medium text-foreground leading-relaxed">
+          {/* Prompt Chips */}
+          <div className="space-y-2">
+            <p className="eyebrow text-[10px]">Suggested Questions</p>
+            <div className="flex flex-wrap gap-1.5">
+              {SUGGESTED_QUESTIONS.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => handleAskQuestion(undefined, q)}
+                  disabled={askLoading}
+                  className="rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-left text-xs text-muted-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:text-foreground disabled:opacity-60"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {askError && (
+            <p className="text-xs text-destructive">{askError}</p>
+          )}
+
+          {askResult && (
+            <div key={askResult.answer} className="page-enter flex gap-3 rounded-2xl border border-primary/20 bg-card/90 p-4">
+              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-tone-amber text-primary-foreground">
+                <Sparkles className="h-3.5 w-3.5" />
+              </span>
+              <div className="space-y-2">
+                <Badge variant="outline" className="border-primary/30 text-[10px] font-semibold uppercase text-primary">
+                  Intent: {askResult.intent}
+                </Badge>
+                <p className="text-sm font-medium leading-relaxed text-foreground">
                   {askResult.answer}
                 </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          )}
+        </section>
 
         {/* Weekly Performance Review */}
-        <Card variant="feature" className="lg:col-span-7 rounded-[1.9rem] border-border/70 bg-card/70 shadow-soft">
-          <CardHeader className="pb-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <CalendarCheck className="h-5 w-5 text-emerald-500 shrink-0" />
-                <CardTitle className="text-xl font-bold">Weekly Performance Review</CardTitle>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleFetchWeeklyReview}
-                disabled={weeklyLoading}
-                className="rounded-xl shrink-0"
-              >
-                {weeklyLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                ) : (
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                )}
-                {weeklyReview ? "Refresh Review" : "Generate Review"}
-              </Button>
+        <section className="ambient-panel rounded-[1.9rem] p-5 sm:p-6 lg:col-span-7">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-success/15 text-success">
+                <CalendarCheck className="h-5 w-5" />
+              </span>
+              <h2 className="font-display text-xl font-bold">Weekly Performance Review</h2>
             </div>
-          </CardHeader>
-          <CardContent>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleFetchWeeklyReview}
+              disabled={weeklyLoading}
+              className="shrink-0 rounded-xl"
+            >
+              {weeklyLoading ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              {weeklyReview ? "Refresh Review" : "Generate Review"}
+            </Button>
+          </div>
+
+          <div className="mt-5">
             {weeklyError && (
-              <p className="text-xs text-destructive mb-3">{weeklyError}</p>
+              <p className="mb-3 text-xs text-destructive">{weeklyError}</p>
             )}
 
             {!weeklyReview && !weeklyLoading && (
               <div className="rounded-2xl border border-dashed border-border/70 p-6 text-center">
                 <CalendarCheck className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                <p className="mx-auto max-w-sm text-xs text-muted-foreground">
                   Click above to generate a structured weekly breakdown of your wins, key shifts, focus area, and 7-day experiment.
                 </p>
               </div>
             )}
 
             {weeklyReview && (
-              <div className="space-y-4 text-sm">
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                  <h4 className="font-bold text-foreground text-base leading-snug">{weeklyReview.headline}</h4>
-                  <p className="text-xs text-muted-foreground mt-1">Focus Area: <span className="font-semibold text-foreground">{weeklyReview.focusArea}</span></p>
+              <div className="stagger space-y-4 text-sm">
+                <div style={toneStyle("--tone-mint")} className="tone-panel rounded-2xl p-4">
+                  <h3 className="font-display text-lg font-bold leading-snug text-foreground">{weeklyReview.headline}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Focus Area: <span className="font-semibold text-foreground">{weeklyReview.focusArea}</span>
+                  </p>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2 rounded-xl border border-border/60 bg-card/60 p-3.5">
-                    <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Top Wins</p>
-                    <ul className="space-y-1.5">
-                      {weeklyReview.wins.map((w, idx) => (
-                        <li key={idx} className="text-xs text-foreground flex items-start gap-1.5 leading-tight">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0 mt-1" />
-                          <span>{w}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="space-y-2 rounded-xl border border-border/60 bg-card/60 p-3.5">
-                    <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Key Shifts</p>
-                    <ul className="space-y-1.5">
-                      {weeklyReview.changes.map((c, idx) => (
-                        <li key={idx} className="text-xs text-foreground flex items-start gap-1.5 leading-tight">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0 mt-1" />
-                          <span>{c}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {[
+                    { title: "Top Wins", tone: "--tone-mint", items: weeklyReview.wins },
+                    { title: "Key Shifts", tone: "--tone-amber", items: weeklyReview.changes },
+                  ].map((group) => (
+                    <div key={group.title} style={toneStyle(group.tone)} className="space-y-2 rounded-2xl border border-border/60 bg-background/60 p-3.5">
+                      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-foreground/80">
+                        <span className="tone-dot h-2 w-2 rounded-full" />
+                        {group.title}
+                      </p>
+                      <ul className="space-y-1.5">
+                        {group.items.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5 text-xs leading-snug text-foreground">
+                            <span className="tone-dot mt-1 h-1.5 w-1.5 shrink-0 rounded-full" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
 
                 {weeklyReview.experiment && (
-                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5">
-                    <p className="text-xs font-bold text-primary flex items-center gap-1.5">
+                  <div className="rounded-2xl border border-primary/25 bg-primary/5 p-4">
+                    <p className="flex items-center gap-1.5 text-xs font-bold text-primary">
                       <Lightbulb className="h-4 w-4 shrink-0" /> 7-Day Experiment
                     </p>
-                    <p className="text-xs text-foreground mt-1 leading-relaxed font-medium">{weeklyReview.experiment}</p>
+                    <p className="mt-1 text-sm font-medium leading-relaxed text-foreground">{weeklyReview.experiment}</p>
                   </div>
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       </div>
     </div>
   );

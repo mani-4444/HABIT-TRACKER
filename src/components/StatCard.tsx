@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
@@ -20,29 +19,29 @@ export function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <Card
-      variant="stat"
+    <div
       className={cn(
-        "rounded-[1.7rem] border-border/55 p-6 shadow-soft hover:-translate-y-0.5 hover:shadow-soft-lg",
+        "ambient-panel group relative overflow-hidden rounded-[1.7rem] p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-soft-lg",
         className,
       )}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            {label}
-          </p>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-primary/10 blur-2xl transition-transform duration-700 group-hover:scale-150"
+      />
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <p className="eyebrow">{label}</p>
           <p className="font-display text-4xl font-bold tracking-tight">
             {value}
           </p>
           {sublabel && (
             <p
               className={cn(
-                "text-xs font-medium",
+                "truncate text-xs font-medium",
                 trend === "up" && "text-success",
                 trend === "down" && "text-destructive",
-                trend === "neutral" && "text-muted-foreground",
-                !trend && "text-muted-foreground",
+                (!trend || trend === "neutral") && "text-muted-foreground",
               )}
             >
               {sublabel}
@@ -50,11 +49,11 @@ export function StatCard({
           )}
         </div>
         {Icon && (
-          <div className="rounded-2xl bg-primary/15 p-3 shadow-inner-soft">
+          <div className="shrink-0 rounded-2xl bg-primary/15 p-3 shadow-inner-soft transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110">
             <Icon className="h-6 w-6 text-primary" />
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 }

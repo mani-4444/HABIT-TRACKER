@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -23,6 +23,17 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 const queryClient = new QueryClient();
 
+// Public pages get a floating toggle; the app header has its own.
+function FloatingThemeToggle() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/app")) return null;
+  return (
+    <div className="fixed right-4 top-4 z-[70] transition-colors duration-300">
+      <ThemeToggle />
+    </div>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -31,9 +42,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ErrorBoundary>
-            <div className="fixed right-4 top-4 z-[70] transition-colors duration-300">
-              <ThemeToggle />
-            </div>
+            <FloatingThemeToggle />
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />

@@ -99,7 +99,7 @@ export function HabitActivityModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 lg:p-8 rounded-3xl border-border/60 bg-card/95 backdrop-blur-md">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto rounded-3xl border-border/60 bg-card/95 p-4 backdrop-blur-md sm:p-6 lg:p-8 [&>*]:min-w-0">
         {/* Header with Habit Selector */}
         <DialogHeader className="space-y-3 pb-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -108,7 +108,7 @@ export function HabitActivityModal({
                 {currentHabit?.emoji || "⭐"}
               </div>
               <div>
-                <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <DialogTitle className="flex items-center gap-2 font-display text-2xl font-bold">
                   {currentHabit?.name || "Habit Activity"}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -150,9 +150,9 @@ export function HabitActivityModal({
           <div className="space-y-6 pt-2">
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-2xl border border-border/50 bg-card/60 p-3.5 space-y-1">
+              <div className="space-y-1 rounded-2xl border border-border/60 bg-background/60 p-3.5">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Flame className="h-3.5 w-3.5 text-orange-500" />
+                  <Flame className="h-3.5 w-3.5 text-primary" />
                   <span>Current Streak</span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
@@ -162,15 +162,15 @@ export function HabitActivityModal({
                   <span className="text-xs text-muted-foreground">days</span>
                 </div>
                 {history?.isAtRisk && (
-                  <span className="text-[10px] text-amber-500 font-medium block">
-                    ⚠️ Needs check-in today
+                  <span className="block text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                    Needs check-in today
                   </span>
                 )}
               </div>
 
-              <div className="rounded-2xl border border-border/50 bg-card/60 p-3.5 space-y-1">
+              <div className="space-y-1 rounded-2xl border border-border/60 bg-background/60 p-3.5">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <TrendingUp className="h-3.5 w-3.5 text-blue-500" />
+                  <TrendingUp className="h-3.5 w-3.5 text-tone-sky" />
                   <span>Best Streak</span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
@@ -184,9 +184,9 @@ export function HabitActivityModal({
                 </span>
               </div>
 
-              <div className="rounded-2xl border border-border/50 bg-card/60 p-3.5 space-y-1">
+              <div className="space-y-1 rounded-2xl border border-border/60 bg-background/60 p-3.5">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Target className="h-3.5 w-3.5 text-emerald-500" />
+                  <Target className="h-3.5 w-3.5 text-success" />
                   <span>Completions</span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
@@ -200,7 +200,7 @@ export function HabitActivityModal({
                 </span>
               </div>
 
-              <div className="rounded-2xl border border-border/50 bg-card/60 p-3.5 space-y-1">
+              <div className="space-y-1 rounded-2xl border border-border/60 bg-background/60 p-3.5">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
                   <span>Period Rate</span>
@@ -212,7 +212,7 @@ export function HabitActivityModal({
                 </div>
                 <div className="w-full bg-muted h-1 rounded-full overflow-hidden mt-1">
                   <div
-                    className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                    className="h-full rounded-full bg-gradient-to-r from-success to-chart-2 transition-all duration-700"
                     style={{ width: `${stats.rate}%` }}
                   />
                 </div>
@@ -286,7 +286,7 @@ export function HabitActivityModal({
                     Day of Week Activity
                   </span>
                   <span className="text-[11px] text-muted-foreground">
-                    Best: <strong className="text-emerald-500">{stats.strongestDay}</strong>
+                    Best: <strong className="text-success">{stats.strongestDay}</strong>
                   </span>
                 </div>
                 <div className="grid grid-cols-7 gap-1.5 items-end h-20 pt-2">
@@ -301,8 +301,8 @@ export function HabitActivityModal({
                         <div className="w-full bg-muted/60 rounded-t-md h-12 flex items-end overflow-hidden">
                           <div
                             className={cn(
-                              "w-full rounded-t-md transition-all duration-300",
-                              count > 0 ? "bg-emerald-500" : "bg-transparent",
+                              "w-full rounded-t-md transition-all duration-700",
+                              count > 0 ? "bg-gradient-to-t from-success to-chart-2" : "bg-transparent",
                             )}
                             style={{ height: `${Math.max(heightPercent, count > 0 ? 15 : 0)}%` }}
                           />
@@ -332,14 +332,14 @@ export function HabitActivityModal({
                       key={m.monthKey}
                       className={cn(
                         "flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs border border-border/40",
-                        m.count > 0 ? "bg-emerald-500/10 border-emerald-500/30" : "bg-muted/30",
+                        m.count > 0 ? "border-success/30 bg-success/10" : "bg-muted/30",
                       )}
                     >
                       <span className="font-medium text-foreground">{m.monthLabel}</span>
                       <span
                         className={cn(
                           "font-bold",
-                          m.count > 0 ? "text-emerald-500" : "text-muted-foreground",
+                          m.count > 0 ? "text-success" : "text-muted-foreground",
                         )}
                       >
                         {m.count}

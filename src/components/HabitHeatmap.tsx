@@ -142,37 +142,37 @@ export function HabitHeatmap({
     <TooltipProvider delayDuration={150}>
       <div
         className={cn(
-          "w-full rounded-2xl bg-neutral-900/90 dark:bg-neutral-950 p-4 md:p-6 text-neutral-100 border border-neutral-800 shadow-xl overflow-hidden",
+          "page-enter w-full overflow-hidden rounded-2xl border border-border/60 bg-card/80 p-4 text-foreground shadow-soft md:p-6",
           className,
         )}
       >
         {/* Top Info Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-neutral-800/80 text-xs">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3 text-xs">
           <div className="flex items-center gap-2">
             <span className="text-base">{habitEmoji}</span>
-            <span className="font-semibold text-neutral-200">{habitName}</span>
-            <span className="text-neutral-500">•</span>
-            <span className="text-neutral-400">
-              <strong className="text-emerald-400 font-semibold">{totalActiveInView}</strong> days active in this period
+            <span className="font-semibold text-foreground">{habitName}</span>
+            <span className="text-muted-foreground">•</span>
+            <span className="text-muted-foreground">
+              <strong className="font-semibold text-success">{totalActiveInView}</strong> days active in this period
             </span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-neutral-400">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <span>Inactive</span>
             <div className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded-[2px] bg-neutral-800 border border-neutral-700/40" />
-              <div className="w-2.5 h-2.5 rounded-[2px] bg-emerald-900/80" />
-              <div className="w-2.5 h-2.5 rounded-[2px] bg-emerald-600" />
-              <div className="w-2.5 h-2.5 rounded-[2px] bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]" />
+              <div className="h-2.5 w-2.5 rounded-[3px] bg-muted" />
+              <div className="h-2.5 w-2.5 rounded-[3px] bg-success/45" />
+              <div className="h-2.5 w-2.5 rounded-[3px] bg-success/75" />
+              <div className="h-2.5 w-2.5 rounded-[3px] bg-success" />
             </div>
             <span>Completed</span>
           </div>
         </div>
 
         {/* Scrollable Heatmap Container */}
-        <div className="overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
+        <div className="overflow-x-auto pb-2">
           <div className="inline-flex items-start gap-4 min-w-max pr-4">
             {/* Weekday indicators (Mon, Wed, Fri) */}
-            <div className="flex flex-col justify-between h-[108px] pt-[2px] text-[10px] font-medium text-neutral-500 select-none">
+            <div className="flex h-[108px] select-none flex-col justify-between pt-[2px] text-[10px] font-medium text-muted-foreground">
               <span>Sun</span>
               <span>Tue</span>
               <span>Thu</span>
@@ -200,17 +200,14 @@ export function HabitHeatmap({
                           const formattedDate = format(day.date, "EEEE, MMMM d, yyyy");
 
                           // Color classes
-                          let cellBg = "bg-neutral-800/90 border border-neutral-700/30 hover:border-neutral-500";
+                          let cellBg = "bg-muted hover:bg-muted-foreground/25";
                           if (day.isFuture) {
-                            cellBg = "bg-neutral-900/40 border border-neutral-800/40 opacity-40 cursor-default";
+                            cellBg = "bg-muted/50 opacity-50 cursor-default";
                           } else if (day.completed) {
-                            if (day.count > 1) {
-                              cellBg =
-                                "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] border border-emerald-300 hover:brightness-110";
-                            } else {
-                              cellBg =
-                                "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)] border border-emerald-400/50 hover:brightness-110";
-                            }
+                            cellBg =
+                              day.count > 1
+                                ? "bg-success shadow-[0_0_6px_hsl(var(--success)/0.5)] hover:brightness-110"
+                                : "bg-success/75 hover:bg-success";
                           }
 
                           return (
@@ -221,32 +218,32 @@ export function HabitHeatmap({
                                     "w-3 h-3 md:w-3.5 md:h-3.5 rounded-[3px] transition-all duration-150 cursor-pointer select-none",
                                     cellBg,
                                     day.isToday &&
-                                      "ring-1.5 ring-offset-1 ring-offset-neutral-900 ring-white/80",
+                                      "ring-2 ring-primary ring-offset-1 ring-offset-card",
                                     !day.isFuture && "hover:scale-125 hover:z-20",
                                   )}
                                 />
                               </TooltipTrigger>
                               <TooltipContent
                                 side="top"
-                                className="bg-neutral-900 text-neutral-100 border-neutral-700 shadow-xl px-3 py-2 text-xs z-50 rounded-xl"
+                                className="z-50 rounded-xl px-3 py-2 text-xs shadow-soft-lg"
                               >
-                                <p className="font-semibold text-neutral-200">
+                                <p className="font-semibold text-foreground">
                                   {formattedDate} {day.isToday && "(Today)"}
                                 </p>
                                 <p className="text-[11px] mt-0.5 flex items-center gap-1.5">
                                   {day.isFuture ? (
-                                    <span className="text-neutral-400">Future date</span>
+                                    <span className="text-muted-foreground">Future date</span>
                                   ) : day.completed ? (
                                     <>
-                                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
-                                      <span className="text-emerald-300 font-medium">
+                                      <span className="inline-block h-2 w-2 rounded-full bg-success" />
+                                      <span className="font-medium text-success">
                                         Completed ({day.count} {day.count === 1 ? "time" : "times"})
                                       </span>
                                     </>
                                   ) : (
                                     <>
-                                      <span className="inline-block w-2 h-2 rounded-full bg-neutral-600" />
-                                      <span className="text-neutral-400">No activity recorded</span>
+                                      <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground/40" />
+                                      <span className="text-muted-foreground">No activity recorded</span>
                                     </>
                                   )}
                                 </p>
@@ -259,7 +256,7 @@ export function HabitHeatmap({
                   </div>
 
                   {/* Month Label Centered Under Month Columns */}
-                  <span className="text-[11px] font-medium text-neutral-400 select-none mt-1">
+                  <span className="mt-1 select-none text-[11px] font-medium text-muted-foreground">
                     {block.monthLabel}
                   </span>
                 </div>
