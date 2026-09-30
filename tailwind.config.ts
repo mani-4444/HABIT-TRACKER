@@ -22,6 +22,8 @@ export default {
       fontFamily: {
         sans: ["Manrope", "Segoe UI", "sans-serif"],
         display: ["Fraunces", "Times New Roman", "serif"],
+        archivo: ["Archivo", "Segoe UI", "sans-serif"],
+        mono: ["Spline Sans Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -61,6 +63,10 @@ export default {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
           muted: "hsl(var(--success-muted))",
+        },
+        highlight: {
+          DEFAULT: "hsl(var(--highlight))",
+          foreground: "hsl(var(--highlight-foreground))",
         },
         warning: {
           DEFAULT: "hsl(var(--warning))",

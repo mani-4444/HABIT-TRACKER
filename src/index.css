@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800&family=Archivo:wdth,wght@62..125,400..900&family=Spline+Sans+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -39,6 +39,9 @@
     --success: 146 55% 39%;
     --success-foreground: 144 90% 96%;
     --success-muted: 144 50% 91%;
+
+    --highlight: 50 100% 62%;
+    --highlight-foreground: 222 45% 16%;
 
     --warning: 43 97% 50%;
     --warning-foreground: 29 77% 18%;
@@ -268,4 +271,338 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary) / 0.52);
+}
+
+/* ------------------------------------------------------------------
+ * Ledger theme: dot-grid paper, ink and highlighter.
+ * Applied to <html> by pages that opt in (currently the landing page).
+ * ------------------------------------------------------------------ */
+@layer base {
+  .theme-ledger {
+    --background: 207 14% 94%;
+    --foreground: 222 45% 16%;
+    --card: 210 20% 98%;
+    --card-foreground: 222 45% 16%;
+    --popover: 210 20% 98%;
+    --popover-foreground: 222 45% 16%;
+    --primary: 222 45% 16%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 210 16% 89%;
+    --secondary-foreground: 222 45% 16%;
+    --muted: 210 16% 90%;
+    --muted-foreground: 219 14% 38%;
+    --accent: 210 18% 88%;
+    --accent-foreground: 222 45% 16%;
+    --border: 212 16% 84%;
+    --input: 212 16% 78%;
+    --ring: 222 45% 16%;
+    --radius: 0.875rem;
+    --highlight: 50 100% 62%;
+    --highlight-foreground: 222 45% 16%;
+
+    --shadow-soft:
+      0 1px 0 hsl(222 45% 16% / 0.04),
+      0 18px 40px -28px hsl(222 45% 16% / 0.4);
+
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --font-body: "Archivo", "Segoe UI", sans-serif;
+    --font-display: "Archivo", "Segoe UI", sans-serif;
+  }
+
+  .theme-ledger.dark {
+    --background: 222 36% 9%;
+    --foreground: 214 30% 92%;
+    --card: 221 32% 12.5%;
+    --card-foreground: 214 30% 92%;
+    --popover: 221 32% 12.5%;
+    --popover-foreground: 214 30% 92%;
+    --primary: 214 30% 92%;
+    --primary-foreground: 222 36% 9%;
+    --secondary: 220 26% 18%;
+    --secondary-foreground: 214 30% 92%;
+    --muted: 220 26% 16%;
+    --muted-foreground: 217 16% 66%;
+    --accent: 220 26% 19%;
+    --accent-foreground: 214 30% 92%;
+    --border: 219 24% 21%;
+    --input: 219 24% 28%;
+    --ring: 50 100% 62%;
+    --highlight: 50 100% 62%;
+    --highlight-foreground: 222 36% 9%;
+
+    --shadow-soft:
+      0 1px 0 hsl(0 0% 100% / 0.03) inset,
+      0 24px 48px -30px hsl(222 60% 3% / 0.9);
+  }
+
+  .theme-ledger body {
+    font-stretch: 100%;
+    background-image: radial-gradient(
+      hsl(var(--foreground) / 0.075) 1px,
+      transparent 1.4px
+    );
+    background-size: 24px 24px;
+  }
+}
+
+@layer components {
+  /* Condensed poster headline */
+  .type-poster {
+    font-family: "Archivo", sans-serif;
+    font-stretch: 68%;
+    font-weight: 850;
+    line-height: 0.86;
+    letter-spacing: -0.012em;
+  }
+
+  /* Section headings: a touch condensed, still readable at 2–3rem */
+  .type-heading {
+    font-family: "Archivo", sans-serif;
+    font-stretch: 80%;
+    font-weight: 780;
+    line-height: 0.98;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  .type-number {
+    font-family: "Archivo", sans-serif;
+    font-stretch: 62%;
+    font-weight: 800;
+    line-height: 0.85;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .eyebrow {
+    font-family: "Spline Sans Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* --- page-load sequence ------------------------------------------------ */
+  .ledger-rise {
+    animation: ledger-rise 0.9s var(--ease-out) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  .ledger-swipe {
+    color: inherit;
+    padding: 0 0.04em;
+    margin: 0 -0.04em;
+    background: linear-gradient(
+        transparent 52%,
+        hsl(var(--highlight)) 52%,
+        hsl(var(--highlight)) 90%,
+        transparent 90%
+      )
+      no-repeat;
+    background-size: 0% 100%;
+    animation: ledger-swipe 0.75s var(--ease-out) 0.85s forwards;
+  }
+
+  .dark .ledger-swipe {
+    background: linear-gradient(
+        transparent 80%,
+        hsl(var(--highlight)) 80%,
+        hsl(var(--highlight)) 95%,
+        transparent 95%
+      )
+      no-repeat;
+    background-size: 0% 100%;
+  }
+
+  /* --- habit grid ------------------------------------------------------- */
+  .ledger-cell {
+    animation: ledger-cell-in 0.5s var(--ease-out) both;
+    animation-delay: var(--d, 0ms);
+    transition:
+      background-color 0.45s var(--ease-out),
+      box-shadow 0.45s var(--ease-out),
+      transform 0.3s var(--ease-out);
+  }
+
+  .ledger-cell-done {
+    background-color: hsl(var(--foreground));
+  }
+
+  .ledger-cell-missed {
+    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.22);
+  }
+
+  .ledger-cell-future {
+    box-shadow: inset 0 0 0 1px hsl(var(--foreground) / 0.08);
+    background-color: hsl(var(--foreground) / 0.03);
+  }
+
+  .ledger-evidence {
+    background-color: hsl(var(--highlight));
+    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.85);
+    transition-delay: calc(var(--e, 0) * 45ms);
+  }
+
+  .ledger-today {
+    background-color: hsl(var(--highlight) / 0.28);
+    box-shadow: inset 0 0 0 2px hsl(var(--foreground));
+    animation:
+      ledger-cell-in 0.5s var(--ease-out) var(--d, 0ms) both,
+      ledger-pulse 2.2s ease-out 1.6s infinite;
+  }
+
+  /* After the visitor has interacted, skip the entry animation. */
+  .ledger-today.ledger-today-idle {
+    animation: ledger-pulse 2.2s ease-out infinite;
+  }
+
+  .ledger-stamp {
+    animation: ledger-stamp 0.45s var(--ease-out) both;
+  }
+
+  .ledger-count {
+    display: inline-block;
+    animation: ledger-count 0.5s var(--ease-out) both;
+  }
+
+  .ledger-fade {
+    animation: ledger-rise 0.6s var(--ease-out) both;
+    animation-delay: var(--d, 0ms);
+  }
+
+  /* --- scroll reveal ------------------------------------------------------ */
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.9s var(--ease-out),
+      transform 0.9s var(--ease-out);
+    transition-delay: var(--d, 0ms);
+  }
+
+  [data-reveal][data-shown] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Small squares that fill in once their section is on screen */
+  .ledger-sq {
+    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.18);
+    transition:
+      background-color 0.4s var(--ease-out),
+      box-shadow 0.4s var(--ease-out);
+    transition-delay: calc(var(--d, 0ms) + 300ms + var(--i, 0) * 28ms);
+  }
+
+  [data-shown] .ledger-sq {
+    background-color: hsl(var(--foreground));
+    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground));
+  }
+
+  [data-shown] .ledger-sq[data-hl] {
+    background-color: hsl(var(--highlight));
+    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.85);
+  }
+
+  /* Final call-to-action square */
+  .ledger-check path {
+    stroke-dasharray: 60;
+    stroke-dashoffset: 60;
+    transition: stroke-dashoffset 0.5s var(--ease-out) 0.15s;
+  }
+
+  .group:hover .ledger-check path,
+  .group:focus-within .ledger-check path {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ledger-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ledger-swipe {
+  to {
+    background-size: 100% 100%;
+  }
+}
+
+@keyframes ledger-cell-in {
+  from {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ledger-pulse {
+  0% {
+    box-shadow:
+      inset 0 0 0 2px hsl(var(--foreground)),
+      0 0 0 0 hsl(var(--highlight) / 0.9);
+  }
+  70%,
+  100% {
+    box-shadow:
+      inset 0 0 0 2px hsl(var(--foreground)),
+      0 0 0 8px hsl(var(--highlight) / 0);
+  }
+}
+
+@keyframes ledger-stamp {
+  0% {
+    transform: scale(1.45);
+  }
+  60% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes ledger-count {
+  from {
+    opacity: 0;
+    transform: translateY(40%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ledger-rise,
+  .ledger-fade,
+  .ledger-cell,
+  .ledger-today,
+  .ledger-stamp,
+  .ledger-count,
+  [data-reveal],
+  .ledger-sq,
+  .ledger-check path {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .ledger-swipe,
+  .dark .ledger-swipe {
+    animation: none;
+    background-size: 100% 100%;
+  }
 }
