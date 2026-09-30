@@ -54,7 +54,7 @@ export function AppLayout() {
   });
 
   return (
-    <div className="relative flex min-h-screen overflow-x-hidden">
+    <div className="relative flex min-h-screen overflow-x-clip">
       {/* The login page's sunrise backdrop, fixed behind every app page */}
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="gradient-hero absolute inset-0 opacity-80" />
