@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { format, startOfDay } from "date-fns";
+import { Flame, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DEMO_HABITS,
@@ -67,8 +68,11 @@ export function HabitGridDemo() {
   };
 
   return (
-    <div className="relative rounded-[1.5rem] border border-border bg-card p-4 shadow-soft sm:p-6">
-      <div role="group" aria-label="Example habits" className="flex flex-wrap gap-1.5">
+    <div
+      className="relative rounded-[1.75rem] border border-border bg-card/90 p-4 shadow-soft backdrop-blur-xl sm:p-6"
+      style={cssVars({ "--habit": `var(${habit.tone})` })}
+    >
+      <div role="group" aria-label="Example habits" className="flex flex-wrap gap-2">
         {DEMO_HABITS.map((h) => {
           const active = h.id === habit.id;
           return (
@@ -77,32 +81,37 @@ export function HabitGridDemo() {
               type="button"
               aria-pressed={active}
               onClick={() => setHabitId(h.id)}
+              style={cssVars({ "--chip": `var(${h.tone})` })}
               className={cn(
-                "rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors duration-300",
+                "inline-flex items-center gap-2 rounded-full border-2 px-3.5 py-1.5 text-[13px] font-semibold transition-all duration-300",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                 active
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground",
+                  ? "border-[hsl(var(--chip))] bg-[hsl(var(--chip)/0.14)] text-foreground"
+                  : "border-transparent bg-muted text-muted-foreground hover:text-foreground",
               )}
             >
+              <span className="h-2 w-2 rounded-full bg-[hsl(var(--chip))]" />
               {h.name}
             </button>
           );
         })}
       </div>
 
-      <div className="mt-6 flex items-end gap-8 sm:gap-10">
-        <div>
-          <span key={`s-${habit.id}-${streak}`} className="type-number ledger-count text-[3.75rem] sm:text-[4.5rem]">
-            {streak}
-          </span>
-          <p className="eyebrow mt-1.5">Day streak</p>
+      <div className="mt-6 flex items-center gap-5 sm:gap-7">
+        <div className="flex items-center gap-3 rounded-2xl bg-[hsl(var(--habit))] px-4 py-3 text-[hsl(247_52%_10%)] transition-colors duration-500">
+          <Flame className="h-7 w-7 shrink-0" strokeWidth={2.4} />
+          <div>
+            <span key={`s-${habit.id}-${streak}`} className="type-number count text-[2.5rem] sm:text-5xl">
+              {streak}
+            </span>
+            <p className="text-xs font-bold opacity-80">day streak</p>
+          </div>
         </div>
         <div>
-          <span key={`r-${habit.id}-${rate}`} className="type-number ledger-count text-[2.25rem] text-muted-foreground sm:text-[2.75rem]">
+          <span key={`r-${habit.id}-${rate}`} className="type-number count text-[2.25rem] sm:text-[2.75rem]">
             {rate}%
           </span>
-          <p className="eyebrow mt-1.5">Last 12 weeks</p>
+          <p className="label mt-1">done, last 12 weeks</p>
         </div>
       </div>
 
@@ -112,14 +121,14 @@ export function HabitGridDemo() {
 
       <div
         key={habit.id}
-        className="mt-6 grid gap-[3px] sm:gap-1"
+        className="mt-6 grid gap-[3px] sm:gap-[5px]"
         style={{ gridTemplateColumns: `auto repeat(${DEMO_WEEKS}, minmax(0, 1fr))` }}
       >
         {months.map((m) => (
           <span
             key={m.col}
             aria-hidden
-            className="whitespace-nowrap pb-1 font-mono text-[10px] leading-none text-muted-foreground"
+            className="whitespace-nowrap pb-1 text-[11px] font-semibold leading-none text-muted-foreground"
             style={{ gridColumn: m.col + 2, gridRow: 1 }}
           >
             {m.text}
@@ -130,7 +139,7 @@ export function HabitGridDemo() {
           <span
             key={row}
             aria-hidden
-            className="flex items-center pr-1.5 font-mono text-[10px] leading-none text-muted-foreground sm:pr-2"
+            className="flex items-center pr-1.5 text-[11px] font-semibold leading-none text-muted-foreground sm:pr-2"
             style={{ gridColumn: 1, gridRow: row + 2 }}
           >
             {label}
@@ -142,7 +151,7 @@ export function HabitGridDemo() {
           const delay = cell.col * 55 + cell.row * 14;
           const evidenceIndex = evidenceOrder.get(cell.key);
           const highlighted = showEvidence && evidenceIndex !== undefined;
-          const shape = "ledger-cell aspect-square w-full rounded-[3px] sm:rounded-[5px]";
+          const shape = "cell aspect-square w-full rounded-[4px] sm:rounded-[6px]";
 
           if (cell.offset === 0) {
             return (
@@ -159,8 +168,8 @@ export function HabitGridDemo() {
                   "relative before:absolute before:-inset-1.5 before:content-['']",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                   isLogged
-                    ? cn("ledger-stamp", highlighted ? "ledger-evidence" : "ledger-cell-done")
-                    : cn("ledger-today", touched && "ledger-today-idle"),
+                    ? cn("cell-stamp", highlighted ? "cell-evidence" : "cell-done")
+                    : cn("cell-today", touched && "cell-today-idle"),
                 )}
               />
             );
@@ -175,12 +184,12 @@ export function HabitGridDemo() {
               className={cn(
                 shape,
                 highlighted
-                  ? "ledger-evidence"
+                  ? "cell-evidence"
                   : cell.state === "done"
-                    ? "ledger-cell-done"
+                    ? "cell-done"
                     : cell.state === "missed"
-                      ? "ledger-cell-missed"
-                      : "ledger-cell-future",
+                      ? "cell-missed"
+                      : "cell-future",
               )}
             />
           );
@@ -191,30 +200,30 @@ export function HabitGridDemo() {
         <p aria-live="polite" className="text-[13px] text-muted-foreground">
           {isLogged ? (
             <>
-              <span className="font-semibold text-foreground">Logged.</span> {streak} days in a row.
+              <span className="font-bold text-foreground">Logged!</span> {streak} days in a row.
             </>
           ) : (
             <>Today's square is empty. Tap it to log.</>
           )}
         </p>
-        <div aria-hidden className="flex items-center gap-3 font-mono text-[10px] text-muted-foreground">
+        <div aria-hidden className="flex items-center gap-3 text-[11px] font-semibold text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-[2px] bg-foreground" /> Done
+            <span className="h-2.5 w-2.5 rounded-[3px] bg-[hsl(var(--habit))]" /> Done
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-[2px] shadow-[inset_0_0_0_1.5px_hsl(var(--foreground)/0.25)]" /> Missed
+            <span className="h-2.5 w-2.5 rounded-[3px] shadow-[inset_0_0_0_1.5px_hsl(var(--foreground)/0.2)]" /> Missed
           </span>
         </div>
       </div>
 
-      <div className="mt-5 rounded-xl border border-foreground/10 bg-muted/60 p-4">
-        <p className="eyebrow flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-[2px] bg-highlight shadow-[inset_0_0_0_1.5px_hsl(var(--foreground)/0.85)]" />
-          Insight · from {insight.evidence.length} highlighted days
+      <div className="mt-5 rounded-2xl bg-gradient-to-br from-[hsl(var(--habit)/0.14)] to-[hsl(var(--sun)/0.14)] p-4 transition-colors duration-500">
+        <p className="flex items-center gap-2 text-xs font-bold text-foreground/80">
+          <Sparkles className="h-3.5 w-3.5 text-brand-text" />
+          AI insight · from {insight.evidence.length} highlighted days
         </p>
         <p
           key={`i-${habit.id}`}
-          className="ledger-fade mt-2 text-[15px] font-medium leading-snug text-foreground"
+          className="fade mt-1.5 text-[15px] font-semibold leading-snug text-foreground"
           style={cssVars({ "--d": "200ms" })}
         >
           {insight.text}

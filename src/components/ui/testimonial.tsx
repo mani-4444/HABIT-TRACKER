@@ -1,5 +1,8 @@
 import type { CSSProperties } from "react";
+import { Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const TONES = ["--coral", "--mint", "--violet"];
 
 export interface TestimonialItem {
   id?: string | number;
@@ -70,35 +73,34 @@ export default function Example({
           <div
             key={item.id ?? index}
             data-reveal
-            style={{ "--d": `${index * 110}ms` } as CSSProperties}
+            style={{ "--d": `${index * 110}ms`, "--tone": `var(${TONES[index % TONES.length]})` } as CSSProperties}
             className="flex"
           >
-            <figure className="group flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-1 hover:shadow-soft-lg">
+            <figure className="group flex w-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_28px_50px_-28px_hsl(var(--tone)/0.8)]">
               <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                 <img
                   src={item.image}
                   alt={item.author}
                   loading="lazy"
                   className={cn(
-                    "h-full w-full object-cover grayscale-[30%] transition duration-700 ease-out group-hover:scale-[1.04] group-hover:grayscale-0",
+                    "h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.05]",
                     item.imagePosition || "object-center",
                   )}
                 />
               </div>
 
               <div className="flex flex-1 flex-col p-5 sm:p-6">
-                <p className="flex items-baseline gap-2 border-b border-border pb-4">
-                  {Number.isNaN(days) ? (
-                    <span className="text-sm font-semibold">{item.streak}</span>
-                  ) : (
-                    <>
-                      <span className="type-number text-5xl">{days}</span>
-                      <span className="eyebrow">Day streak</span>
-                    </>
-                  )}
-                </p>
+                {Number.isNaN(days) ? (
+                  <p className="text-sm font-bold">{item.streak}</p>
+                ) : (
+                  <p className="inline-flex w-fit items-center gap-2 rounded-2xl bg-[hsl(var(--tone))] px-3.5 py-2 text-[hsl(247_52%_10%)]">
+                    <Flame className="h-5 w-5" strokeWidth={2.4} />
+                    <span className="type-number text-3xl">{days}</span>
+                    <span className="text-xs font-bold opacity-80">day streak</span>
+                  </p>
+                )}
 
-                <blockquote className="mt-4 flex-1 text-[15px] leading-relaxed text-foreground/90">
+                <blockquote className="mt-5 flex-1 text-[15px] leading-relaxed text-foreground/90">
                   {item.quote}
                 </blockquote>
 
