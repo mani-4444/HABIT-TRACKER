@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TONES = ["--coral", "--mint", "--violet"];
+const TONES = ["--tone-orange", "--tone-mint", "--tone-rose"];
 
 export interface TestimonialItem {
   id?: string | number;
@@ -76,7 +76,7 @@ export default function Example({
             style={{ "--d": `${index * 110}ms`, "--tone": `var(${TONES[index % TONES.length]})` } as CSSProperties}
             className="flex"
           >
-            <figure className="group flex w-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_28px_50px_-28px_hsl(var(--tone)/0.8)]">
+            <figure className="ambient-panel group flex w-full flex-col overflow-hidden rounded-3xl transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_28px_50px_-28px_hsl(var(--tone)/0.8)]">
               <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                 <img
                   src={item.image}
@@ -93,10 +93,10 @@ export default function Example({
                 {Number.isNaN(days) ? (
                   <p className="text-sm font-bold">{item.streak}</p>
                 ) : (
-                  <p className="inline-flex w-fit items-center gap-2 rounded-2xl bg-[hsl(var(--tone))] px-3.5 py-2 text-[hsl(247_52%_10%)]">
+                  <p className="inline-flex w-fit items-center gap-2 rounded-2xl bg-[hsl(var(--tone)/0.13)] px-3.5 py-2 text-[hsl(var(--tone))]">
                     <Flame className="h-5 w-5" strokeWidth={2.4} />
                     <span className="type-number text-3xl">{days}</span>
-                    <span className="text-xs font-bold opacity-80">day streak</span>
+                    <span className="text-xs font-semibold text-muted-foreground">day streak</span>
                   </p>
                 )}
 

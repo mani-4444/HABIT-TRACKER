@@ -1,16 +1,16 @@
 import { cn } from "@/lib/utils";
 
-/** Four logged days, one colour per habit. */
+/** The "H" tile used on the login and signup pages. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={cn("grid h-8 w-8 shrink-0 rotate-[-6deg] grid-cols-2 gap-[3px]", className)}
+      className={cn(
+        "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-extrabold text-primary-foreground shadow-ambient",
+        className,
+      )}
     >
-      <span className="rounded-[4px] bg-brand-violet" />
-      <span className="rounded-[4px] bg-brand-coral" />
-      <span className="rounded-[4px] bg-brand-mint" />
-      <span className="rounded-[4px] bg-brand-sun" />
+      H
     </span>
   );
 }

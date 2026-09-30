@@ -69,7 +69,7 @@ export function HabitGridDemo() {
 
   return (
     <div
-      className="relative rounded-[1.75rem] border border-border bg-card/90 p-4 shadow-soft backdrop-blur-xl sm:p-6"
+      className="ambient-panel relative rounded-[2rem] p-4 sm:p-6"
       style={cssVars({ "--habit": `var(${habit.tone})` })}
     >
       <div role="group" aria-label="Example habits" className="flex flex-wrap gap-2">
@@ -98,13 +98,13 @@ export function HabitGridDemo() {
       </div>
 
       <div className="mt-6 flex items-center gap-5 sm:gap-7">
-        <div className="flex items-center gap-3 rounded-2xl bg-[hsl(var(--habit))] px-4 py-3 text-[hsl(247_52%_10%)] transition-colors duration-500">
+        <div className="flex items-center gap-3 rounded-2xl bg-[hsl(var(--habit)/0.13)] px-4 py-3 text-[hsl(var(--habit))] transition-colors duration-500">
           <Flame className="h-7 w-7 shrink-0" strokeWidth={2.4} />
           <div>
             <span key={`s-${habit.id}-${streak}`} className="type-number count text-[2.5rem] sm:text-5xl">
               {streak}
             </span>
-            <p className="text-xs font-bold opacity-80">day streak</p>
+            <p className="text-xs font-semibold text-muted-foreground">day streak</p>
           </div>
         </div>
         <div>
@@ -216,9 +216,9 @@ export function HabitGridDemo() {
         </div>
       </div>
 
-      <div className="mt-5 rounded-2xl bg-gradient-to-br from-[hsl(var(--habit)/0.14)] to-[hsl(var(--sun)/0.14)] p-4 transition-colors duration-500">
+      <div className="mt-5 rounded-2xl bg-gradient-to-br from-[hsl(var(--habit)/0.12)] to-[hsl(var(--tone-amber)/0.12)] p-4 transition-colors duration-500">
         <p className="flex items-center gap-2 text-xs font-bold text-foreground/80">
-          <Sparkles className="h-3.5 w-3.5 text-brand-text" />
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
           AI insight · from {insight.evidence.length} highlighted days
         </p>
         <p

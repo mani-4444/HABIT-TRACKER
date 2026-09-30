@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400..800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -39,9 +39,6 @@
     --success: 146 55% 39%;
     --success-foreground: 144 90% 96%;
     --success-muted: 144 50% 91%;
-
-    --highlight: 50 100% 62%;
-    --highlight-foreground: 222 45% 16%;
 
     --warning: 43 97% 50%;
     --warning-foreground: 29 77% 18%;
@@ -274,120 +271,45 @@
 }
 
 /* ------------------------------------------------------------------
- * Vivid theme: bright paper, violet lead, coral / mint / sun accents.
- * Applied to <html> by pages that opt in (currently the landing page).
+ * Landing page: habit tones, type helpers and motion.
+ * Colours come from the app theme above (same as the login page).
  * ------------------------------------------------------------------ */
 @layer base {
-  .theme-vivid {
-    --background: 250 100% 99%;
-    --foreground: 247 52% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 247 52% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 247 52% 14%;
-    --primary: 252 100% 64%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 250 100% 96%;
-    --secondary-foreground: 247 52% 14%;
-    --muted: 250 60% 96%;
-    --muted-foreground: 249 14% 42%;
-    --accent: 250 100% 96%;
-    --accent-foreground: 252 70% 40%;
-    --border: 249 45% 91%;
-    --input: 249 35% 86%;
-    --ring: 252 100% 64%;
-    --radius: 1rem;
-
-    --violet: 252 100% 64%;
-    --coral: 11 100% 65%;
-    --mint: 162 81% 42%;
-    --sun: 43 100% 62%;
-    --highlight: 43 100% 62%;
-    --highlight-foreground: 247 52% 14%;
-    --brand-text: 252 75% 52%;
-
-    --shadow-soft:
-      0 1px 2px hsl(247 52% 14% / 0.04),
-      0 20px 44px -26px hsl(252 80% 40% / 0.28);
-    --shadow-glow: 0 14px 30px -12px hsl(252 100% 64% / 0.55);
-
+  :root {
+    --tone-orange: 18 82% 54%;
+    --tone-mint: 157 44% 43%;
+    --tone-rose: 338 66% 58%;
+    --tone-amber: 40 95% 56%;
+    --highlight: 46 100% 62%;
+    --highlight-foreground: 21 28% 16%;
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --font-body: "Figtree", "Segoe UI", sans-serif;
-    --font-display: "Bricolage Grotesque", "Segoe UI", sans-serif;
   }
 
-  .theme-vivid.dark {
-    --background: 246 46% 7%;
-    --foreground: 250 100% 97%;
-    --card: 247 40% 11%;
-    --card-foreground: 250 100% 97%;
-    --popover: 247 40% 11%;
-    --popover-foreground: 250 100% 97%;
-    --primary: 252 100% 64%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 248 35% 17%;
-    --secondary-foreground: 250 100% 97%;
-    --muted: 248 35% 15%;
-    --muted-foreground: 249 22% 72%;
-    --accent: 248 40% 19%;
-    --accent-foreground: 250 100% 90%;
-    --border: 248 32% 20%;
-    --input: 248 30% 27%;
-    --ring: 252 100% 74%;
-
-    --violet: 252 100% 70%;
-    --coral: 11 100% 66%;
-    --mint: 162 72% 48%;
-    --sun: 43 100% 62%;
-    --highlight-foreground: 247 52% 10%;
-    --brand-text: 252 100% 81%;
-
-    --shadow-soft:
-      0 1px 0 hsl(0 0% 100% / 0.04) inset,
-      0 24px 48px -28px hsl(250 80% 2% / 0.9);
-    --shadow-glow: 0 14px 34px -12px hsl(252 100% 64% / 0.6);
-  }
-
-  .theme-vivid body {
-    background-image: none;
+  .dark {
+    --tone-orange: 23 89% 62%;
+    --tone-mint: 157 48% 52%;
+    --tone-rose: 338 72% 66%;
+    --tone-amber: 40 95% 60%;
+    --highlight: 46 100% 62%;
+    --highlight-foreground: 24 30% 9%;
   }
 }
 
 @layer components {
-  .type-display {
-    font-family: "Bricolage Grotesque", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 800;
-    line-height: 0.92;
-    letter-spacing: -0.035em;
-  }
-
-  .type-heading {
-    font-family: "Bricolage Grotesque", sans-serif;
-    font-weight: 750;
-    line-height: 1.02;
-    letter-spacing: -0.03em;
-    text-wrap: balance;
-  }
-
   .type-number {
-    font-family: "Bricolage Grotesque", sans-serif;
-    font-weight: 800;
+    font-family: var(--font-display);
+    font-weight: 700;
     line-height: 0.9;
-    letter-spacing: -0.04em;
-    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums lining-nums;
   }
 
   .eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    border-radius: 9999px;
-    background: hsl(var(--primary) / 0.1);
-    padding: 0.35rem 0.8rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: hsl(var(--brand-text));
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
   }
 
   .label {
@@ -396,43 +318,27 @@
     color: hsl(var(--muted-foreground));
   }
 
-  .text-gradient {
-    background: linear-gradient(
-      100deg,
-      hsl(var(--violet)) 0%,
-      hsl(330 95% 62%) 55%,
-      hsl(var(--coral)) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  .btn-glow {
-    box-shadow: var(--shadow-glow);
-  }
-
-  /* --- ambient colour glows -------------------------------------------- */
+  /* --- ambient glows (the login page's orbs, set in motion) ------------- */
   .glow {
     position: absolute;
     pointer-events: none;
     border-radius: 9999px;
-    filter: blur(70px);
-    opacity: 0.45;
+    filter: blur(48px);
+    opacity: 0.6;
     animation: glow-drift 18s ease-in-out infinite alternate;
   }
 
   .dark .glow {
-    opacity: 0.28;
+    opacity: 0.32;
   }
 
   @media (max-width: 640px) {
     .glow {
-      opacity: 0.28;
+      opacity: 0.4;
     }
 
     .dark .glow {
-      opacity: 0.2;
+      opacity: 0.22;
     }
   }
 
@@ -464,11 +370,11 @@
 
   .cell-missed {
     background-color: hsl(var(--foreground) / 0.04);
-    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.1);
+    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.12);
   }
 
   .cell-future {
-    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.06);
+    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.07);
   }
 
   .cell-evidence {
@@ -523,7 +429,7 @@
   /* Small squares that fill in once their section is on screen */
   .sq {
     background-color: hsl(var(--foreground) / 0.05);
-    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.1);
+    box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.12);
     transition:
       background-color 0.4s var(--ease-out),
       box-shadow 0.4s var(--ease-out),

@@ -31,7 +31,7 @@ export interface DemoHabit {
   id: string;
   name: string;
   /** CSS variable holding this habit's colour (HSL channels). */
-  tone: "--violet" | "--mint" | "--coral";
+  tone: "--tone-orange" | "--tone-mint" | "--tone-rose";
   /** Consecutive completed days ending yesterday. */
   baseStreak: number;
   seed: number;
@@ -56,7 +56,7 @@ export const DEMO_HABITS: DemoHabit[] = [
   {
     id: "read",
     name: "Read 30 min",
-    tone: "--violet",
+    tone: "--tone-orange",
     baseStreak: 14,
     seed: 11,
     missRate: [0.2, 0.18, 0.2, 0.22, 0.26, 0.3, 0.28],
@@ -72,7 +72,7 @@ export const DEMO_HABITS: DemoHabit[] = [
   {
     id: "walk",
     name: "Morning walk",
-    tone: "--mint",
+    tone: "--tone-mint",
     baseStreak: 5,
     seed: 42,
     missRate: [0.05, 0.72, 0.05, 0.07, 0.05, 0.08, 0.08],
@@ -88,7 +88,7 @@ export const DEMO_HABITS: DemoHabit[] = [
   {
     id: "sugar",
     name: "No sugar after 8 PM",
-    tone: "--coral",
+    tone: "--tone-rose",
     baseStreak: 3,
     seed: 7,
     missRate: [0.04, 0.04, 0.05, 0.06, 0.12, 0.62, 0.55],

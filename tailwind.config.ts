@@ -22,8 +22,6 @@ export default {
       fontFamily: {
         sans: ["Manrope", "Segoe UI", "sans-serif"],
         display: ["Fraunces", "Times New Roman", "serif"],
-        bricolage: ["Bricolage Grotesque", "Segoe UI", "sans-serif"],
-        figtree: ["Figtree", "Segoe UI", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -64,12 +62,11 @@ export default {
           foreground: "hsl(var(--success-foreground))",
           muted: "hsl(var(--success-muted))",
         },
-        brand: {
-          violet: "hsl(var(--violet))",
-          coral: "hsl(var(--coral))",
-          mint: "hsl(var(--mint))",
-          sun: "hsl(var(--sun))",
-          text: "hsl(var(--brand-text))",
+        tone: {
+          orange: "hsl(var(--tone-orange))",
+          mint: "hsl(var(--tone-mint))",
+          rose: "hsl(var(--tone-rose))",
+          amber: "hsl(var(--tone-amber))",
         },
         highlight: {
           DEFAULT: "hsl(var(--highlight))",
