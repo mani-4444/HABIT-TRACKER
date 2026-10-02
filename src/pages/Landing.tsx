@@ -1,11 +1,11 @@
-import { useMemo, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { format, previousTuesday, startOfWeek, subDays, subWeeks } from "date-fns";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import Testimonial, { defaultHabitTestimonials } from "@/components/ui/testimonial";
 import { HabitGridDemo } from "@/components/landing/HabitGridDemo";
+import { AICoachShowcase } from "@/components/landing/AICoachShowcase";
 import { LogoMark } from "@/components/landing/LogoMark";
 import { useReveal } from "@/hooks/useReveal";
 
@@ -48,13 +48,6 @@ const steps = [
   },
 ];
 
-const review = [
-  { label: "Win", tone: "--tone-mint", text: "Read every day this week, 7 of 7." },
-  { label: "Shift", tone: "--tone-rose", text: "Evening habits slipped after 9 PM on three days." },
-  { label: "Focus", tone: "--tone-orange", text: "Protect the last hour before bed." },
-  { label: "Try for 7 days", tone: "--tone-amber", text: "Phone on the charger by 8:45 PM, then log how the evening went." },
-];
-
 function StepSquares({ count, highlighted }: { count: number; highlighted: number[] }) {
   return (
     <div aria-hidden className="grid w-fit grid-cols-10 content-end gap-1 sm:h-[58px]">
@@ -73,16 +66,9 @@ function StepSquares({ count, highlighted }: { count: number; highlighted: numbe
 export default function Landing() {
   const pageRef = useReveal<HTMLDivElement>();
 
-  const example = useMemo(() => {
-    const today = new Date();
-    const lastTuesday = previousTuesday(today);
-    const tuesdays = [0, 1, 3, 5, 6, 9].map((w) => format(subWeeks(lastTuesday, w), "EEE d MMM"));
-    const reviewWeek = format(subDays(startOfWeek(today, { weekStartsOn: 1 }), 7), "d MMM");
-    return { tuesdays, reviewWeek };
-  }, []);
 
   return (
-    <div ref={pageRef} className="relative min-h-screen w-full max-w-full overflow-x-hidden">
+    <div ref={pageRef} className="relative min-h-screen w-full max-w-full overflow-x-clip">
       {/* The login page's sunrise gradient and orbs, fading out below the hero */}
       <div
         aria-hidden
@@ -124,8 +110,9 @@ export default function Landing() {
         <section className="container relative pb-20 pt-8 sm:pt-12 lg:pb-28 lg:pt-14">
           <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
             <div>
-              <p className="eyebrow rise" style={delay(0)}>
-                Habit tracking · AI coaching from your own log
+              <p className="rise ai-border inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold text-foreground" style={delay(0)}>
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                Habit tracker with an AI coach built in
               </p>
               <h1 className="mt-5 font-display text-[clamp(3.25rem,8.5vw,6.25rem)] font-bold leading-[0.95] text-foreground">
                 <span className="rise block" style={delay(90)}>
@@ -150,8 +137,10 @@ export default function Landing() {
                 </span>
               </h1>
               <p className="rise mt-8 max-w-[31rem] text-lg leading-relaxed text-muted-foreground sm:text-xl" style={delay(280)}>
-                Check off your habits each day. HabitTracker turns that log into weekly reviews and
-                insights that point to the exact days behind them.
+                Check off your habits each day. Your{" "}
+                <span className="font-semibold text-foreground">AI coach</span> reads that log and
+                turns it into weekly reviews, pattern alerts and answers, each pointing to the exact
+                days behind it.
               </p>
               <div className="rise mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style={delay(370)}>
                 <Link to="/signup" className={cn(buttonVariants({ size: "xl" }), "group text-base")}>
@@ -187,6 +176,11 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* AI coach showcase */}
+        <section aria-labelledby="coach-title" className="container pb-20 pt-4 sm:pb-28">
+          <AICoachShowcase />
+        </section>
+
         {/* How it works */}
         <section aria-labelledby="how-title" className="relative">
           <div className="container py-20 sm:py-28">
@@ -215,77 +209,6 @@ export default function Landing() {
                 </li>
               ))}
             </ol>
-          </div>
-        </section>
-
-        {/* AI coaching */}
-        <section aria-labelledby="coach-title" className="container pb-20 sm:pb-28">
-          <div className="grid items-start gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
-            <div data-reveal className="lg:sticky lg:top-24">
-              <p className="eyebrow">AI coaching</p>
-              <h2 id="coach-title" className="mt-4 font-display text-4xl font-bold leading-[1.02] sm:text-5xl">
-                Coaching that <span className="block text-primary">shows its work.</span>
-              </h2>
-              <p className="mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">
-                Every answer and every weekly review links back to the days it came from, so you
-                can check it against your own log instead of taking it on faith.
-              </p>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-2">
-              <article data-reveal className="ambient-panel flex flex-col rounded-3xl p-5 sm:p-6">
-                <p className="label">Ask your habits</p>
-                <p className="ml-auto mt-5 w-fit max-w-[88%] rounded-3xl rounded-br-md bg-primary px-4 py-2.5 text-[15px] font-medium text-primary-foreground">
-                  Which day do I skip most?
-                </p>
-                <div className="mt-4 flex gap-3">
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-tone-amber text-primary-foreground">
-                    <Sparkles className="h-3.5 w-3.5" />
-                  </span>
-                  <p className="text-[15px] leading-relaxed text-foreground">
-                    <strong className="font-bold">Tuesday.</strong> You missed your morning walk on 6
-                    of the last 10 Tuesdays, more than any other day of the week.
-                  </p>
-                </div>
-                <div className="mt-auto pt-5">
-                  <div className="border-t border-border pt-4">
-                    <p className="label">Evidence</p>
-                    <ul className="mt-2.5 flex flex-wrap gap-1.5">
-                      {example.tuesdays.map((day) => (
-                        <li
-                          key={day}
-                          className="rounded-full bg-highlight px-2.5 py-1 text-xs font-bold text-highlight-foreground"
-                        >
-                          {day}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </article>
-
-              <article data-reveal style={delay(120)} className="ambient-panel rounded-3xl p-5 sm:p-6">
-                <div className="flex items-baseline justify-between gap-3">
-                  <p className="label">Weekly review</p>
-                  <p className="text-xs font-semibold text-muted-foreground">Week of {example.reviewWeek}</p>
-                </div>
-                <dl className="mt-4 space-y-2.5">
-                  {review.map((row) => (
-                    <div
-                      key={row.label}
-                      style={vars({ "--tone": `var(${row.tone})` })}
-                      className="rounded-2xl bg-[hsl(var(--tone)/0.11)] px-4 py-3"
-                    >
-                      <dt className="flex items-center gap-2 text-xs font-bold text-foreground/75">
-                        <span className="h-2 w-2 rounded-full bg-[hsl(var(--tone))]" />
-                        {row.label}
-                      </dt>
-                      <dd className="mt-1 text-[15px] font-medium leading-snug text-foreground">{row.text}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </article>
-            </div>
           </div>
         </section>
 

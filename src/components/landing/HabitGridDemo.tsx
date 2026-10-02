@@ -8,6 +8,7 @@ import {
   buildDemoCells,
   type DemoCell,
 } from "./habit-demo-data";
+import { useTypewriter } from "./useTypewriter";
 
 const ROW_LABELS = ["Mon", "", "Wed", "", "Fri", "", "Sun"];
 
@@ -47,6 +48,7 @@ export function HabitGridDemo() {
 
   const streak = habit.baseStreak + (isLogged ? 1 : 0);
   const insight = habit.insight(cells, streak);
+  const typed = useTypewriter(insight.text, showEvidence);
   const evidenceOrder = new Map(insight.evidence.map((c, i) => [c.key, i]));
   const tracked = cells.filter((c) => c.state === "done" || c.state === "missed");
   const doneCount = tracked.filter((c) => c.state === "done").length;
@@ -216,17 +218,35 @@ export function HabitGridDemo() {
         </div>
       </div>
 
-      <div className="mt-5 rounded-2xl bg-gradient-to-br from-[hsl(var(--habit)/0.12)] to-[hsl(var(--tone-amber)/0.12)] p-4 transition-colors duration-500">
-        <p className="flex items-center gap-2 text-xs font-bold text-foreground/80">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-          AI insight · from {insight.evidence.length} highlighted days
+      {/* The AI coach "reads" the grid while it fills, then types its insight. */}
+      <div className="ai-border mt-5 rounded-2xl p-4">
+        <div className="flex items-center justify-between gap-3 text-xs font-bold">
+          <span className="flex items-center gap-2 text-foreground">
+            <span className="ai-orb flex h-6 w-6 items-center justify-center rounded-full">
+              <Sparkles className="h-3.5 w-3.5" />
+            </span>
+            AI coach
+          </span>
+          <span className="font-semibold text-muted-foreground">
+            {showEvidence ? `from ${insight.evidence.length} highlighted days` : "reading your log…"}
+          </span>
+        </div>
+        <p aria-live="polite" className="sr-only">
+          {showEvidence ? insight.text : ""}
         </p>
-        <p
-          key={`i-${habit.id}`}
-          className="fade mt-1.5 text-[15px] font-semibold leading-snug text-foreground"
-          style={cssVars({ "--d": "200ms" })}
-        >
-          {insight.text}
+        <p aria-hidden className="mt-2 min-h-[2.75em] text-[15px] font-semibold leading-snug text-foreground">
+          {showEvidence ? (
+            <>
+              {typed.shown}
+              {!typed.done && <span className="type-caret" />}
+            </>
+          ) : (
+            <span className="inline-flex h-[1.4em] items-center gap-1.5">
+              <span className="ai-dot" />
+              <span className="ai-dot" />
+              <span className="ai-dot" />
+            </span>
+          )}
         </p>
       </div>
     </div>
