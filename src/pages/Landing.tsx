@@ -1,277 +1,294 @@
+import { type CSSProperties } from "react";
 import { Link } from "react-router-dom";
-import {
-  Sparkles,
-  ArrowRight,
-  Brain,
-  CalendarCheck,
-  HelpCircle,
-  CircleDashed,
-  TrendingUp,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import Testimonial from "@/components/ui/testimonial";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+import Testimonial, { defaultHabitTestimonials } from "@/components/ui/testimonial";
+import { HabitGridDemo } from "@/components/landing/HabitGridDemo";
+import { AICoachShowcase } from "@/components/landing/AICoachShowcase";
+import { LogoMark } from "@/components/landing/LogoMark";
+import { useReveal } from "@/hooks/useReveal";
 
-const features = [
+const vars = (v: Record<string, string | number>) => v as CSSProperties;
+const delay = (ms: number) => vars({ "--d": `${ms}ms` });
+
+/** How much log you'd have at each stage, drawn as squares. */
+const steps = [
   {
-    icon: Sparkles,
-    title: "Evidence-Backed Insights",
-    description:
-      "Behavioral coaching and pattern detection grounded directly in your tracked habits, streaks, and logging times.",
+    when: "Day 1",
+    title: "Log it",
+    body: "Add the habits you care about and tick each one off when it's done. One tap per habit.",
+    squares: 1,
+    highlighted: [] as number[],
+    tone: "--tone-orange",
   },
   {
-    icon: CalendarCheck,
-    title: "Weekly Performance Review",
-    description:
-      "Automated weekly breakdowns synthesizing your wins, key shifts, primary focus area, and a 7-day micro-experiment.",
+    when: "Day 7",
+    title: "Get your first weekly review",
+    body: "Your wins, what shifted, one area to focus on, and a small experiment for the next seven days.",
+    squares: 7,
+    highlighted: [],
+    tone: "--tone-amber",
   },
   {
-    icon: HelpCircle,
-    title: "Ask Your Habits",
-    description:
-      "Ask natural-language questions about your completion history, weekday trends, and routines with instant data-backed answers.",
+    when: "Day 30",
+    title: "See the patterns",
+    body: "With a month of history, trends show up: strong days, weak days, and streaks close to breaking.",
+    squares: 30,
+    highlighted: [],
+    tone: "--tone-mint",
+  },
+  {
+    when: "Any day",
+    title: "Ask your log",
+    body: "Ask Bodhi plain questions like “Which day do I skip most?” and get answers drawn from your own history.",
+    squares: 30,
+    highlighted: [1, 8, 15, 22, 29],
+    tone: "--tone-rose",
   },
 ];
 
-export default function Landing() {
+function StepSquares({ count, highlighted }: { count: number; highlighted: number[] }) {
   return (
-    <div className="relative min-h-screen w-full max-w-full overflow-x-hidden pb-10">
-      <div className="floating-orb -left-20 top-8 h-64 w-64 bg-primary/35 animate-float-slow" />
-      <div
-        className="floating-orb right-0 top-1/3 h-80 w-80 -translate-y-1/2 bg-accent/60 animate-pulse-glow"
-        style={{ animationDelay: "0.8s" }}
-      />
+    <div aria-hidden className="grid w-fit grid-cols-10 content-end gap-1 sm:h-[58px]">
+      {Array.from({ length: count }, (_, i) => (
+        <span
+          key={i}
+          data-hl={highlighted.includes(i) ? "" : undefined}
+          className="sq h-3.5 w-3.5 rounded-[4px]"
+          style={vars({ "--i": i })}
+        />
+      ))}
+    </div>
+  );
+}
 
-      <header className="container relative z-10 flex h-20 items-center justify-between pr-14 sm:pr-16">
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-primary shadow-ambient shrink-0">
-            <span className="text-base sm:text-lg font-extrabold text-primary-foreground">
-              H
+export default function Landing() {
+  const pageRef = useReveal<HTMLDivElement>();
+
+
+  return (
+    <div ref={pageRef} className="relative min-h-screen w-full max-w-full overflow-x-clip">
+      {/* The login page's sunrise gradient and orbs, fading out below the hero */}
+      <div
+        aria-hidden
+        className="gradient-hero pointer-events-none absolute inset-x-0 top-0 h-[1000px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_65%,transparent)]"
+      >
+        <div className="glow -left-20 top-12 h-72 w-72 bg-primary/40" />
+        <div className="glow -right-16 top-72 h-80 w-80 bg-accent" style={{ animationDelay: "-7s" }} />
+        <div className="glow bottom-24 left-1/3 h-64 w-64 bg-tone-amber/30" style={{ animationDelay: "-12s" }} />
+      </div>
+
+      <header className="container relative z-10 flex h-20 items-center justify-between pr-16 sm:pr-[4.5rem]">
+        <Link
+          to="/"
+          className="flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+        >
+          <LogoMark />
+          <span className="leading-tight">
+            <span className="block text-base font-bold tracking-wide">HabitTracker</span>
+            <span className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:block">
+              Habit intelligence
             </span>
-          </div>
-          <div>
-            <p className="text-sm sm:text-base font-semibold tracking-wide">
-              HabitTracker
-            </p>
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              Habit Intelligence
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-3">
-          <Link to="/login">
-            <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs sm:h-9 sm:px-3 sm:text-sm">
-              Login
-            </Button>
+          </span>
+        </Link>
+        <nav className="flex items-center gap-1 sm:gap-2">
+          <Link
+            to="/login"
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-10 px-3 text-sm sm:px-4")}
+          >
+            Log in
           </Link>
-          <Link to="/signup">
-            <Button size="sm" className="h-8 px-3 text-xs sm:h-9 sm:px-3.5 sm:text-sm">
-              Get Started
-            </Button>
+          <Link to="/signup" className={cn(buttonVariants({ size: "sm" }), "hidden h-10 rounded-xl px-4 text-sm sm:inline-flex")}>
+            Start tracking
           </Link>
-        </div>
+        </nav>
       </header>
 
-      <section className="container relative z-10 py-8 sm:py-14 lg:py-20">
-        <div className="grid items-center gap-8 lg:gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-6 sm:space-y-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3.5 py-1 sm:px-4 sm:py-1.5 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              <Brain className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span>AI-Powered Habit Intelligence</span>
-            </div>
-
-            <h1 className="sunrise-title text-balance font-display text-3xl font-extrabold leading-tight text-foreground sm:text-5xl lg:text-6xl">
-              Build Better Habits
-              <br />
-              <span className="text-primary">with evidence-backed AI coaching.</span>
-            </h1>
-
-            <p className="max-w-xl text-base sm:text-lg leading-relaxed text-muted-foreground text-balance">
-              Track your daily rituals and unlock deep behavioral intelligence.
-              Get automated weekly reviews, pattern analysis grounded in your
-              verified history, and natural-language Q&A about your progress.
-            </p>
-
-            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <Link to="/signup" className="w-full sm:w-auto">
-                <Button size="xl" variant="hero" className="w-full sm:w-auto justify-center">
-                  Start Tracking
-                  <ArrowRight className="h-5 w-5 ml-1.5" />
-                </Button>
-              </Link>
-              <Link to="/login" className="w-full sm:w-auto">
-                <Button
-                  size="xl"
-                  variant="hero-secondary"
-                  className="w-full sm:w-auto justify-center"
-                >
-                  I Already Have an Account
-                </Button>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
-              <div className="ambient-panel rounded-2xl p-3 sm:p-4 text-center sm:text-left">
-                <p className="font-display text-lg sm:text-2xl font-bold text-primary">
-                  30–90d
-                </p>
-                <p className="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-muted-foreground leading-tight mt-0.5">
-                  Patterns
-                </p>
-              </div>
-              <div className="ambient-panel rounded-2xl p-3 sm:p-4 text-center sm:text-left">
-                <p className="font-display text-lg sm:text-2xl font-bold text-primary">
-                  Weekly
-                </p>
-                <p className="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-muted-foreground leading-tight mt-0.5">
-                  Reviews
-                </p>
-              </div>
-              <div className="ambient-panel rounded-2xl p-3 sm:p-4 text-center sm:text-left">
-                <p className="font-display text-lg sm:text-2xl font-bold text-primary">
-                  Evidence
-                </p>
-                <p className="text-[10px] sm:text-xs uppercase tracking-[0.08em] text-muted-foreground leading-tight mt-0.5">
-                  Grounded
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative mt-4 lg:mt-0">
-            <div className="ambient-panel relative rounded-[2rem] p-5 sm:p-8">
-              <div className="mb-5 flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Today Snapshot
-                </p>
-                <CircleDashed className="h-4 w-4 text-primary shrink-0" />
-              </div>
-
-              <div className="space-y-2.5 sm:space-y-3">
-                {[
-                  "30 min reading",
-                  "Morning walk",
-                  "No sugar after 8 PM",
-                  "10 min reflection",
-                ].map((habit, index) => (
-                  <div
-                    key={habit}
-                    className="flex items-center gap-2.5 sm:gap-3 rounded-xl border border-border/70 bg-card/80 px-3.5 py-2.5 sm:px-4"
-                    style={{ animationDelay: `${index * 100}ms` }}
+      <main className="relative">
+        {/* Hero */}
+        <section className="container relative pb-20 pt-8 sm:pt-12 lg:pb-28 lg:pt-14">
+          <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+            <div>
+              <p className="rise ai-border inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold text-foreground" style={delay(0)}>
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                Meet Bodhi, your AI habit coach
+              </p>
+              <h1 className="mt-5 font-display text-[clamp(3.25rem,8.5vw,6.25rem)] font-bold leading-[0.95] text-foreground">
+                <span className="rise block" style={delay(90)}>
+                  One square
+                </span>
+                <span className="rise relative inline-block text-primary" style={delay(180)}>
+                  a day.
+                  <svg
+                    aria-hidden
+                    viewBox="0 0 300 24"
+                    preserveAspectRatio="none"
+                    className="squiggle absolute -bottom-[0.16em] left-0 h-[0.2em] w-full text-tone-mint"
                   >
-                    <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-primary shrink-0" />
-                    <p className="text-xs sm:text-sm font-medium text-foreground">
-                      {habit}
-                    </p>
-                  </div>
-                ))}
+                    <path
+                      d="M4 16 C 40 4, 70 22, 110 12 S 180 4, 220 14 S 280 20, 296 8"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="7"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              </h1>
+              <p className="rise mt-8 max-w-[31rem] text-lg leading-relaxed text-muted-foreground sm:text-xl" style={delay(280)}>
+                Check off your habits each day.{" "}
+                <span className="font-semibold text-foreground">Bodhi</span>, your AI habit coach,
+                reads that log and turns it into weekly reviews, pattern alerts and answers, each
+                pointing to the exact days behind it.
+              </p>
+              <div className="rise mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style={delay(370)}>
+                <Link to="/signup" className={cn(buttonVariants({ size: "xl" }), "group text-base")}>
+                  Start tracking
+                  <ArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+                <Link to="/login" className={cn(buttonVariants({ variant: "hero-secondary", size: "xl" }), "text-base")}>
+                  Log in
+                </Link>
               </div>
 
-              {/* AI Coaching Snippet */}
-              <div className="mt-4 sm:mt-5 rounded-2xl border border-primary/20 bg-primary/5 p-3 sm:p-3.5 shadow-inner-soft">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-                  <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                  AI Coaching Insight
+              <div className="rise mt-10 flex items-center gap-3" style={delay(460)}>
+                <div className="flex -space-x-2.5">
+                  {defaultHabitTestimonials.map((t) => (
+                    <img
+                      key={t.author}
+                      src={t.image}
+                      alt=""
+                      className="h-10 w-10 rounded-full border-[3px] border-background object-cover object-top"
+                    />
+                  ))}
                 </div>
-                <p className="mt-1 text-xs text-foreground/90 leading-relaxed font-medium">
-                  Morning reading completion rate is 86% when logged before 9 AM.
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-bold text-foreground">Gora, Geetha and Dong Lee</span>
+                  <br className="sm:hidden" /> are each on a 65+ day streak
                 </p>
               </div>
+            </div>
 
-              <div className="mt-3.5 sm:mt-4 rounded-2xl border border-success/35 bg-success-muted p-3 sm:p-3.5">
-                <div className="flex items-center justify-between">
-                  <p className="font-display text-base sm:text-lg font-bold text-success">
-                    Streak: 14 Days
+            <div className="rise" style={delay(220)}>
+              <HabitGridDemo />
+            </div>
+          </div>
+        </section>
+
+        {/* Bodhi, the AI coach */}
+        <section aria-labelledby="coach-title" className="container pb-20 pt-4 sm:pb-28">
+          <AICoachShowcase />
+        </section>
+
+        {/* How it works */}
+        <section aria-labelledby="how-title" className="relative">
+          <div className="container py-20 sm:py-28">
+            <div data-reveal className="max-w-2xl">
+              <p className="eyebrow">How it works</p>
+              <h2 id="how-title" className="mt-4 font-display text-4xl font-bold leading-[1.02] sm:text-5xl">
+                From the first checkmark <span className="block text-primary">to real patterns.</span>
+              </h2>
+            </div>
+
+            <ol className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {steps.map((step, i) => (
+                <li
+                  key={step.when}
+                  data-reveal
+                  style={vars({ "--d": `${i * 110}ms`, "--tone": `var(${step.tone})` })}
+                  className="ambient-panel rounded-3xl p-6"
+                >
+                  <StepSquares count={step.squares} highlighted={step.highlighted} />
+                  <p className="mt-6 inline-flex items-center gap-2 rounded-full bg-[hsl(var(--tone)/0.13)] px-3 py-1 text-xs font-bold text-foreground">
+                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--tone))]" />
+                    {step.when}
                   </p>
-                  <TrendingUp className="h-4 w-4 text-success shrink-0" />
-                </div>
-                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-                  Consistent weekday logging pattern detected.
-                </p>
-              </div>
-            </div>
-
-            <div className="absolute right-2 -top-3 sm:-right-2 sm:-top-4 rounded-2xl border border-border/70 bg-card/90 px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground shadow-soft backdrop-blur-sm">
-              Habit Intelligence Hub
-            </div>
+                  <h3 className="mt-4 font-display text-2xl font-bold leading-tight">{step.title}</h3>
+                  <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{step.body}</p>
+                </li>
+              ))}
+            </ol>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="container relative z-10 pb-20 lg:pb-24">
-        <div className="grid gap-6 md:grid-cols-3">
-          {features.map((feature, index) => (
-            <Card
-              key={index}
-              variant="feature"
-              className="animate-fade-in rounded-3xl"
-              style={{ animationDelay: `${index * 120}ms` }}
+        {/* Testimonials */}
+        <section aria-labelledby="people-title" className="relative">
+          <div
+            aria-hidden
+            className="gradient-hero pointer-events-none absolute inset-0 opacity-70 [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)]"
+          />
+          <div className="container relative py-20 sm:py-28">
+            <div data-reveal className="max-w-2xl">
+              <p className="eyebrow">People using it</p>
+              <h2 id="people-title" className="mt-4 font-display text-4xl font-bold leading-[1.02] sm:text-5xl">
+                Small actions, <span className="block text-primary">repeated.</span>
+              </h2>
+              <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
+                A pooja before sunrise, self-care between hospital shifts, training every morning.
+                Different habits, same daily square.
+              </p>
+            </div>
+            <Testimonial className="mt-14" />
+          </div>
+        </section>
+
+        {/* Final call to action */}
+        <section className="container py-20 sm:py-24">
+          <div
+            data-reveal
+            className="group relative grid items-center gap-10 overflow-hidden rounded-[2rem] border border-sidebar-border bg-sidebar px-6 py-14 text-sidebar-foreground shadow-ambient sm:px-12 sm:py-16 md:grid-cols-[1fr_auto] lg:px-16"
+          >
+            <div aria-hidden className="glow -right-16 -top-20 h-72 w-72 bg-primary/50" />
+            <div aria-hidden className="glow -bottom-24 left-1/4 h-60 w-60 bg-tone-mint/30" style={{ animationDelay: "-9s" }} />
+
+            <div className="relative">
+              <h2 className="font-display text-[clamp(2.6rem,6.5vw,4.75rem)] font-bold leading-[0.98] text-sidebar-accent-foreground">
+                Today's square
+                <br />
+                <span className="text-sidebar-primary">is still empty.</span>
+              </h2>
+              <p className="mt-5 max-w-md text-lg leading-relaxed text-sidebar-foreground/80">
+                Pick one habit, check it off tonight, and let the log build from there.
+              </p>
+              <Link
+                to="/signup"
+                className={cn(
+                  buttonVariants({ size: "xl" }),
+                  "mt-8 text-base focus-visible:ring-offset-sidebar",
+                )}
+              >
+                Start tracking
+                <ArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+            </div>
+
+            <div
+              aria-hidden
+              className="relative hidden h-44 w-44 rotate-[-6deg] items-center justify-center rounded-[2rem] border-[3px] border-dashed border-sidebar-foreground/40 transition-all duration-500 group-hover:rotate-0 group-hover:border-solid group-hover:border-primary group-hover:bg-primary group-focus-within:rotate-0 group-focus-within:border-primary group-focus-within:bg-primary md:flex lg:h-52 lg:w-52"
             >
-              <CardContent className="pt-6">
-                <div className="mb-4 inline-flex rounded-2xl bg-primary/14 p-3 shadow-inner-soft">
-                  <feature.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mb-2 font-display text-2xl font-bold leading-tight">
-                  {feature.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {feature.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Community Testimonials Section */}
-        <div className="mt-20 sm:mt-28">
-          <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3.5 py-1 sm:px-4 sm:py-1.5 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-4 shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span>Real Habit Builders</span>
+              <svg viewBox="0 0 48 48" className="cta-check h-20 w-20 text-primary-foreground">
+                <path
+                  d="M12 25 l8 8 l16 -18"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </div>
-            <h2 className="font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-              Consistency breeds transformation.
-            </h2>
-            <p className="mt-4 text-base sm:text-lg text-muted-foreground text-balance max-w-xl mx-auto">
-              Real stories from daily habit builders who turned small, repeated actions into unbreakable momentum.
-            </p>
           </div>
+        </section>
+      </main>
 
-          <Testimonial />
-        </div>
-
-        <div className="mt-12 sm:mt-16 rounded-3xl border border-border/70 bg-card/75 p-6 text-center shadow-soft lg:p-8">
-          <p className="font-display text-2xl font-bold text-foreground lg:text-3xl">
-            Grounded in your facts, never generic advice.
-          </p>
-          <p className="mt-2 text-muted-foreground">
-            Transform your daily habit logs into actionable, evidence-backed momentum.
-          </p>
-
-          <div className="mt-6">
-            <Link to="/signup">
-              <Button size="lg" variant="hero">
-                Start Exploring Insights
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <footer className="relative z-10 border-t border-border/70 bg-card/65 backdrop-blur-sm">
-        <div className="container flex flex-col items-center justify-between gap-4 py-8 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
-              <span className="text-xs font-extrabold text-primary-foreground">
-                H
-              </span>
-            </div>
+      <footer className="relative border-t border-border/70 bg-card/65 backdrop-blur-sm">
+        <div className="container flex flex-col items-start justify-between gap-4 py-8 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2.5">
+            <LogoMark className="h-7 w-7 rounded-lg text-xs shadow-none" />
             <span className="text-sm font-semibold">HabitTracker</span>
           </div>
-          <p className="text-sm text-muted-foreground/90">
-            © 2026 HabitTracker. Built for consistency.
-          </p>
+          <p className="text-sm text-muted-foreground">© 2026 HabitTracker · Built for consistency</p>
         </div>
       </footer>
     </div>
