@@ -41,7 +41,7 @@ const steps = [
   {
     when: "Any day",
     title: "Ask your log",
-    body: "Ask plain questions like “Which day do I skip most?” and get answers drawn from your own history.",
+    body: "Ask Bodhi plain questions like “Which day do I skip most?” and get answers drawn from your own history.",
     squares: 30,
     highlighted: [1, 8, 15, 22, 29],
     tone: "--tone-rose",
@@ -112,7 +112,7 @@ export default function Landing() {
             <div>
               <p className="rise ai-border inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold text-foreground" style={delay(0)}>
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
-                Habit tracker with an AI coach built in
+                Meet Bodhi, your AI habit coach
               </p>
               <h1 className="mt-5 font-display text-[clamp(3.25rem,8.5vw,6.25rem)] font-bold leading-[0.95] text-foreground">
                 <span className="rise block" style={delay(90)}>
@@ -137,10 +137,10 @@ export default function Landing() {
                 </span>
               </h1>
               <p className="rise mt-8 max-w-[31rem] text-lg leading-relaxed text-muted-foreground sm:text-xl" style={delay(280)}>
-                Check off your habits each day. Your{" "}
-                <span className="font-semibold text-foreground">AI coach</span> reads that log and
-                turns it into weekly reviews, pattern alerts and answers, each pointing to the exact
-                days behind it.
+                Check off your habits each day.{" "}
+                <span className="font-semibold text-foreground">Bodhi</span>, your AI habit coach,
+                reads that log and turns it into weekly reviews, pattern alerts and answers, each
+                pointing to the exact days behind it.
               </p>
               <div className="rise mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style={delay(370)}>
                 <Link to="/signup" className={cn(buttonVariants({ size: "xl" }), "group text-base")}>
@@ -176,7 +176,7 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* AI coach showcase */}
+        {/* Bodhi, the AI coach */}
         <section aria-labelledby="coach-title" className="container pb-20 pt-4 sm:pb-28">
           <AICoachShowcase />
         </section>

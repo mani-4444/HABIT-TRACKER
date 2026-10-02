@@ -222,18 +222,18 @@ export function AICoachShowcase() {
       <div data-reveal className="lg:sticky lg:top-24">
         <p className="ai-border inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold text-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          AI coach, built in
+          Bodhi, your AI habit coach
         </p>
         <h2 id="coach-title" className="mt-5 font-display text-4xl font-bold leading-[1.02] sm:text-5xl">
-          Meet your AI coach.
+          Meet Bodhi.
           <span className="block text-primary">It shows its work.</span>
         </h2>
         <p className="mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">
-          It reads your whole log, not a generic playbook. Every insight, review and answer points
+          Bodhi is your AI habit coach. It reads your whole log, not a generic playbook. Every insight, review and answer points
           back to the exact days it came from, so you can check it yourself.
         </p>
 
-        <div role="tablist" aria-label="AI coach features" className="mt-8 space-y-2">
+        <div role="tablist" aria-label="What Bodhi does" className="mt-8 space-y-2">
           {TABS.map((t) => {
             const active = tab === t.id;
             return (
@@ -277,7 +277,7 @@ export function AICoachShowcase() {
               <span className="ai-orb flex h-8 w-8 items-center justify-center rounded-xl">
                 <Sparkles className="h-4 w-4" />
               </span>
-              HabitTracker AI
+              Bodhi
             </span>
             <span className="hidden items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-semibold text-success sm:inline-flex">
               <span className="h-1.5 w-1.5 rounded-full bg-success" />

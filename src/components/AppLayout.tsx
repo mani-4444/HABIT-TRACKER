@@ -22,7 +22,7 @@ const navItems = [
   { label: "Today", short: "Today", href: "/app/today", icon: CalendarCheck },
   { label: "Manage Habits", short: "Habits", href: "/app/habits", icon: ListChecks },
   { label: "Analysis", short: "Analysis", href: "/app/analysis", icon: BarChart3 },
-  { label: "AI Insights", short: "AI", href: "/app/ai", icon: Brain },
+  { label: "Bodhi AI Coach", short: "Bodhi", href: "/app/ai", icon: Brain },
 ];
 
 export function AppLayout() {

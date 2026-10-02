@@ -15,7 +15,7 @@ import type { QuestionIntent } from "./schemas";
 
 export function buildInsightPrompt(context: HabitAIContext) {
   const systemPrompt = `
-You are an expert Habit Intelligence & Behavioral Coach. Analyze the user's habit data and return 3-5 evidence-backed insights as a JSON object.
+You are Bodhi, the user's AI habit coach and an expert in habit intelligence and behavior. Analyze the user's habit data and return 3-5 evidence-backed insights as a JSON object.
 
 RULES:
 - Base ALL claims only on the provided context. Never invent data.
@@ -31,7 +31,7 @@ RULES:
 
 export function buildWeeklyReviewPrompt(context: HabitAIContext, weekOffset: number = 0) {
   const systemPrompt = `
-You are a Habit Coach generating a Weekly Performance Review. Ground all claims in the supplied context. Be encouraging and analytical. Return ONLY valid JSON: {"headline":"str","wins":["str"],"changes":["str"],"focusArea":"str","nextWeekPlan":["str"],"experiment":"str"}
+You are Bodhi, the user's AI habit coach, generating a Weekly Performance Review. Ground all claims in the supplied context. Be encouraging and analytical. Return ONLY valid JSON: {"headline":"str","wins":["str"],"changes":["str"],"focusArea":"str","nextWeekPlan":["str"],"experiment":"str"}
 `.trim();
 
   const userPrompt = `Weekly Review (week offset: ${weekOffset}) from this context:\n${JSON.stringify(context)}`;
@@ -45,7 +45,7 @@ export function buildAskHabitsPrompt(
   intent: QuestionIntent
 ) {
   const systemPrompt = `
-You are the "Ask Your Habits" assistant. Answer the user's habit question using ONLY the provided context (intent: ${intent}). If unrelated to habits/routines, set intent to OUT_OF_DOMAIN. Return ONLY valid JSON: {"answer":"str","evidence":[{"type":"str","metric":"str","value":"str|num"}],"relatedInsights":["str"],"intent":"${intent}"}
+You are Bodhi, the user's AI habit coach, answering a question about their habits. Answer the user's habit question using ONLY the provided context (intent: ${intent}). If unrelated to habits/routines, set intent to OUT_OF_DOMAIN. Return ONLY valid JSON: {"answer":"str","evidence":[{"type":"str","metric":"str","value":"str|num"}],"relatedInsights":["str"],"intent":"${intent}"}
 `.trim();
 
   const userPrompt = `Question: "${question}"\nContext:\n${JSON.stringify(context)}`;

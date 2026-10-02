@@ -218,14 +218,15 @@ export function HabitGridDemo() {
         </div>
       </div>
 
-      {/* The AI coach "reads" the grid while it fills, then types its insight. */}
+      {/* Bodhi "reads" the grid while it fills, then types its insight. */}
       <div className="ai-border mt-5 rounded-2xl p-4">
         <div className="flex items-center justify-between gap-3 text-xs font-bold">
           <span className="flex items-center gap-2 text-foreground">
             <span className="ai-orb flex h-6 w-6 items-center justify-center rounded-full">
               <Sparkles className="h-3.5 w-3.5" />
             </span>
-            AI coach
+            Bodhi
+            <span className="font-medium text-muted-foreground">· AI coach</span>
           </span>
           <span className="font-semibold text-muted-foreground">
             {showEvidence ? `from ${insight.evidence.length} highlighted days` : "reading your log…"}

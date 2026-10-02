@@ -168,8 +168,8 @@ export default function AIInsightsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Habit intelligence hub"
-        title="AI"
+        eyebrow="Your AI habit coach"
+        title="Bodhi's"
         accent="coaching & insights."
         description="Evidence-grounded behavioral intelligence derived directly from your tracked habit data, trends, and logging patterns."
         actions={
@@ -192,7 +192,7 @@ export default function AIInsightsPage() {
           <div className="max-w-xl space-y-1">
             <h2 className="font-display text-2xl font-bold sm:text-3xl">Run Pattern Analysis</h2>
             <p className="text-sm text-muted-foreground">
-              Synthesize your habits, streaks, weekday parity, and logging-time patterns into evidence-backed guidance.
+              Bodhi reads your habits, streaks, weekday parity, and logging-time patterns and turns them into evidence-backed guidance.
             </p>
           </div>
 
@@ -267,7 +267,7 @@ export default function AIInsightsPage() {
                   No active habits found
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Add and complete habits to unlock evidence-backed AI coaching.
+                  Add and complete habits so Bodhi has a log to coach you from.
                 </p>
               </div>
             ) : (
@@ -290,7 +290,7 @@ export default function AIInsightsPage() {
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
                 <HelpCircle className="h-5 w-5" />
               </span>
-              <h2 className="font-display text-xl font-bold">Ask Your Habits</h2>
+              <h2 className="font-display text-xl font-bold">Ask Bodhi</h2>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               Ask natural language questions grounded in your historical data.
